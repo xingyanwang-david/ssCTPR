@@ -673,12 +673,12 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
   // c) multiply by constatant factor
   // d) perfrom elnet
   
-   Rcout << "ABC" << std::endl;
+  // Rcout << "ABC" << std::endl;
   int i,j;
   int traits = r.n_cols;
   arma::mat genotypes = genotypeMatrix(fileName, N, P, col_skip_pos, col_skip, keepbytes,
                                        keepoffset, 1);
-  Rcout << "DEF" << std::endl;
+  //Rcout << "DEF" << std::endl;
   int p = genotypes.n_cols;
   if (genotypes.n_cols != r.n_rows) {
     throw std::runtime_error("Number of positions in reference file is not "
