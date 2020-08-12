@@ -1,3 +1,3 @@
 # ssCTPR
 
-## Cross-trait penalized regression using summary statistics.
+Cross-trait penalized regression using summary statistics
