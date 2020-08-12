@@ -1,0 +1,17 @@
+Package: ssCTPR
+Type: Package
+Title: Cross-trait Penalized Regression Using Summary Statistics
+Version: 1.0
+Date: 2020-08-12
+Author: Yingxi Yang
+Maintainer: Yingxi Yang
+      <yingxi_yang@hsph.harvard.edu>
+Description: More details about what the package does.
+      See
+      <http://cran.r-project.org/doc/manuals/r-release/R-exts.html#The-DESCRIPTION-file>
+      for details on how to write this part.
+License: GPL (>= 2)
+Encoding: UTF-8
+Imports: Rcpp (>= 1.0.5)
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 7.1.1
