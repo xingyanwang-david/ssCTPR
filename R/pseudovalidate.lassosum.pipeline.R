@@ -30,7 +30,8 @@ pseudovalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
   
   stopifnot(class(ls.pipeline) == "lassosum.pipeline")
 
-  results <- list(lambda=ls.pipeline$lambda, s=ls.pipeline$s)
+  lambda_cts <- as.numeric(names(ls.pipeline$beta))
+  results <- list(lambda=ls.pipeline$lambda, s=ls.pipeline$s, lambda_ctp=lambda_cts)
   
   if(!is.null(keep) || !is.null(remove)) if(is.null(test.bfile))
     stop("Please specify test.bfile if you specify keep or remove")
@@ -47,8 +48,16 @@ pseudovalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
     sd <- sd.bfile(test.bfile, extract=ls.pipeline$test.extract, 
                    keep=keep, remove=remove, trace=trace, ...)
     sd[sd <= 0] <- Inf # Do not want infinite beta's!
-    ls.pipeline$beta <- lapply(ls.pipeline$beta, 
-                   function(x) as.matrix(Matrix::Diagonal(x=1/sd) %*% x))
+    
+    if(ls.pipeline$traits>1){
+      sd <- rep(sd,ls.pipeline$traits)
+    }
+    for(ii in 1:length(ls.pipeline$beta)){
+      ls.pipeline$beta[[ii]] <- lapply(ls.pipeline$beta[[ii]], function(x) as.matrix(Matrix::Diagonal(x=1/sd) %*% x))
+    }
+    
+    # ls.pipeline$beta <- lapply(ls.pipeline$beta, 
+    #                function(x) as.matrix(Matrix::Diagonal(x=1/sd) %*% x))
     recal <- T
   }
   
@@ -68,16 +77,29 @@ pseudovalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
                   rm.duplicates = T, exclude.ambiguous = exclude.ambiguous, 
                   silent=T)
     
-    beta <- lapply(ls.pipeline$beta, function(x) 
-      as.matrix(Matrix::Diagonal(x=m$rev) %*% x[m$order, ]))
+    beta <- list()
+    for(ii in 1:length(ls.pipeline$beta)){
+      beta[[as.character(ii)]] <- lapply(ls.pipeline$beta[[ii]], function(x) as.matrix(Matrix::Diagonal(x=m$rev) %*% x[m$order,]))
+    }
+    
+    # beta <- lapply(ls.pipeline$beta, function(x) 
+    #   as.matrix(Matrix::Diagonal(x=m$rev) %*% x[m$order, ]))
     if(trace) cat("Calculating PGS...\n")
     toextract <- m$ref.extract
-    pgs <- lapply(beta, function(x) pgs(bfile=test.bfile, weights = x, 
-                                        extract=toextract, 
-                                        keep=parsed.test$keep, 
-                                        cluster=cluster,
-                                        trace=trace-1))
-    names(pgs) <- as.character(ls.pipeline$s)
+    
+    pgs <- list()
+    for(ii in 1:length(beta)){
+      pgs[[as.character(ii)]] <- lapply(beta[[ii]], function(x) pgs(bfile=test.bfile, weights = x, 
+                                                                    extract=toextract, keep=parsed.test$keep, 
+                                                                    cluster=cluster))
+    }
+    
+    # pgs <- lapply(beta, function(x) pgs(bfile=test.bfile, weights = x, 
+    #                                     extract=toextract, 
+    #                                     keep=parsed.test$keep, 
+    #                                     cluster=cluster,
+    #                                     trace=trace-1))
+    names(pgs) <- names(ls.pipeline$beta)
     results <- c(results, list(pgs=pgs))
     
   } else {
@@ -85,13 +107,21 @@ pseudovalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
     if(is.null(ls.pipeline$pgs) || recal) {
       if(trace) cat("Calculating PGS...\n")
       if(length(test.bfile) > 1) stop("Multiple 'test.bfile's not supported here.")
-      pgs <- lapply(ls.pipeline$beta, function(x) pgs(bfile=test.bfile, 
-                                                      weights = x, 
-                                                      keep=parsed.test$keep, 
-                                                      extract=ls.pipeline$test.extract, 
-                                                      cluster=cluster, 
-                                                      trace=trace-1))
-      names(pgs) <- as.character(ls.pipeline$s)
+      
+      pgs <- list()
+      for(ii in 1:length(beta)){
+        pgs[[as.character(ii)]] <- lapply(ls.pipeline$beta[[ii]], function(x) pgs(bfile=test.bfile, weights = x, 
+                                                                                  extract=ls.pipeline$test.extract, keep=parsed.test$keep, 
+                                                                                  cluster=cluster))
+      } 
+      
+      # pgs <- lapply(ls.pipeline$beta, function(x) pgs(bfile=test.bfile, 
+      #                                                 weights = x, 
+      #                                                 keep=parsed.test$keep, 
+      #                                                 extract=ls.pipeline$test.extract, 
+      #                                                 cluster=cluster, 
+      #                                                 trace=trace-1))
+      names(pgs) <- names(ls.pipeline$beta)
       results <- c(results, list(pgs=pgs))
     # } else if(is.null(parsed.test$keep)) {
     } else  {
@@ -109,13 +139,34 @@ pseudovalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
   ### Pseudovalidation ###
   lambdas <- rep(ls.pipeline$lambda, length(ls.pipeline$s))
   ss <- rep(ls.pipeline$s, rep(length(ls.pipeline$lambda), length(ls.pipeline$s)))
-  PGS <- do.call("cbind", results$pgs)
-  BETA <- do.call("cbind", ls.pipeline$beta)
+  
+  PGS <- list()
+  for(ii in 1:length(results$pgs)){
+    PGS[[as.character(ii)]] <- do.call("cbind", results$pgs[[ii]])
+  }
+  names(PGS) <- names(results$pgs)
+  
+  #PGS <- do.call("cbind", results$pgs)
+  
+  BETA <- list()
+  for(ii in 1:length(ls.pipeline$beta)){
+    BETA[[as.character(ii)]] <- do.call("cbind", ls.pipeline$beta[[ii]])
+  }
+  names(BETA) <- names(ls.pipeline$beta)
+  
+  if(ls.pipeline$traits>1){
+    for(ii in 1:length(BETA)) {
+      BETA[[ii]] <- BETA[[ii]][1:(nrow(BETA[[ii]])/ls.pipeline$traits),]
+    }
+  }
+  
+  
+  #BETA <- do.call("cbind", ls.pipeline$beta)
   
   if(trace) cat("Estimating local fdr ...\n")
-  fdr <- fdrtool::fdrtool(ls.pipeline$sumstats$cor, statistic="correlation", 
-                          plot=F)
-  cor.shrunk <- ls.pipeline$sumstats$cor * (1 - fdr$lfdr)
+  fdr <- fdrtool::fdrtool(ls.pipeline$sumstats[,5], statistic="correlation", 
+                          plot=F)  # need to modify for ct? solved
+  cor.shrunk <- ls.pipeline$sumstats[,5] * (1 - fdr$lfdr)
   if(trace) cat("Performing pseudovalidation ...\n")
   pv <- pseudovalidation(test.bfile, 
                          beta=BETA, 
@@ -124,27 +175,35 @@ pseudovalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
                          keep=keep, remove=remove,
                          sd=ls.pipeline$sd, 
                          cluster=cluster, ...)
-
-  pv[is.na(pv)] <- -Inf
-  best <- which(pv == max(pv))[1]
+  for(ii in 1:length(pv)){
+    pv[[ii]][is.na(pv[[ii]])] <- -Inf
+  }
+  max_vec <- lapply(pv, function(x) max(x))
+  max_vec <- unlist(max_vec)
+  best.ct.index <- which.max(max_vec)[1]
+  best.ct <- as.numeric(names(pv)[best.ct.index])
+  best <- which(pv[[best.ct.index]]==max(max_vec))[1]
   best.s <- ss[best]
   best.lambda <- lambdas[best]
-  best.pgs <- PGS[,best]
+  best.pgs <- PGS[[best.ct.index]][,best]
   len.lambda <- length(ls.pipeline$lambda)
   best.beta.s <- ceiling(best / len.lambda)
   best.beta.lambda <- best %% len.lambda
   best.beta.lambda[best.beta.lambda == 0] <- len.lambda
-  best.beta <- beta[[best.beta.s]][,best.beta.lambda]
+  best.beta <- beta[[best.ct.index]][[best.beta.s]][,best.beta.lambda]
+  #best.beta <- beta[[best.beta.s]][,best.beta.lambda]
   
   validation.table <- data.frame(lambda=lambdas, s=ss, value=pv)
   results <- c(results, list(best.s=best.s, 
+                             best.ct=best.ct,
                              best.lambda=best.lambda,
                              best.pgs=best.pgs, 
                              best.beta=best.beta,
+                             traits=ls.pipeline$traits,
                              validation.table=validation.table, 
                              validation.type="pseudovalidation"))
   class(results) <- "validate.lassosum"
-  if(plot) plot(results)
+  #if(plot) plot(results)
   return(results)
   
 }

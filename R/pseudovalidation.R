@@ -1,7 +1,7 @@
 #' @title Performs `pseudovalidation' to select the best \eqn{\lambda} value in lassosum
 #' 
 #' @param bfile A plink bfile stem
-#' @param beta The matrix of estimated \eqn{\beta}s
+#' @param beta The list of estimated \eqn{\beta}s
 #' @param cor The vector of correlations (\eqn{r})
 #' @param sd The standard deviation of the SNPs
 #' @param extract SNPs to extract
@@ -24,15 +24,18 @@
 pseudovalidation <- function(bfile, beta, cor, sd=NULL, 
                              keep=NULL, extract=NULL, exclude=NULL, remove=NULL, 
                              chr=NULL, cluster=NULL, ...) {
-
   stopifnot(is.numeric(cor))
   stopifnot(!any(is.na(cor)))
   if(any(abs(cor) > 1)) warning("Some abs(cor) > 1")
   if(any(abs(cor) == 1)) warning("Some abs(cor) == 1")
 
-  beta <- as.matrix(beta)
-  stopifnot(!any(is.na(beta)))
-  if(length(cor) != nrow(beta)) stop("Length of cor does not match number of rows in beta")
+  for(ii in 1:length(beta)){
+    beta[[ii]] <- as.matrix(beta[[ii]])
+    stopifnot(!any(is.na(beta[[ii]])))
+  }
+  #beta <- as.matrix(beta)
+  #stopifnot(!any(is.na(beta)))
+  if(length(cor) != nrow(beta[[1]])) stop("Length of cor does not match number of rows in beta")
   
   parsed <- parseselect(bfile, extract=extract, exclude = exclude, 
                         keep=keep, remove=remove, 
@@ -46,18 +49,33 @@ pseudovalidation <- function(bfile, beta, cor, sd=NULL,
 
     weight <- 1/sd
     weight[!is.finite(weight)] <- 0
-    scaled.beta <- as.matrix(Diagonal(x=weight) %*% beta)
-    pred <- pgs(bfile, keep=parsed$keep, extract=parsed$extract, 
-                weights=scaled.beta, cluster=cluster)
-    pred2 <- scale(pred, scale=F)
-    bXXb <- colSums(pred2^2) / parsed$n
-    bXy <- cor %*% beta 
     
-    result <- as.vector(bXy / sqrt(bXXb))
+    scaled.beta <- list()
+    pred <- list()
+    for(ii in 1:length(beta)){
+      scaled.beta[[as.character(ii)]] <- as.matrix(Matrix::Diagonal(x=weight) %*% beta[[ii]])
+      pred[[as.character(ii)]] <- pgs(bfile, keep=parsed$keep, extract=parsed$extract, 
+                                      weights=scaled.beta[[ii]], cluster=cluster)
+    }
+    names(scaled.beta) <- names(beta)
+    names(pred) <- names(beta)
+    #scaled.beta <- as.matrix(Diagonal(x=weight) %*% beta)
+    # pred <- pgs(bfile, keep=parsed$keep, extract=parsed$extract, 
+    #             weights=scaled.beta, cluster=cluster)
+    pred2 <- lapply(pred, function(x) scale(x,scale = F))
+    bXXb <- lapply(pred2, function(x) colSums(x^2) / parsed$n)
+    bXy <- lapply(beta, function(x) cor %*% x)
+    
+    result <- list()
+    for(ii in 1:length(bXXb)){
+      result[[as.character(ii)]] <- as.vector(bXy[[ii]] / sqrt(bXXb[[ii]]))
+    }
+    names(result) <- names(bXy)
+    #result <- as.vector(bXy / sqrt(bXXb))
     attr(result, "bXXb") <- bXXb
     attr(result, "bXy") <- bXy
     
     return(result)
-    #' @return the results of the pseudovalidation, i.e. \eqn{f(\lambda)}
+    #' @return the results of the pseudovalidation, i.e. \eqn{f(\lambda, s, \lambda_{ct})}
     
 }

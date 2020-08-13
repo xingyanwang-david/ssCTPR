@@ -21,7 +21,7 @@ pseudovalidation(
 \arguments{
 \item{bfile}{A plink bfile stem}
 
-\item{beta}{The matrix of estimated \eqn{\beta}s}
+\item{beta}{The list of estimated \eqn{\beta}s}
 
 \item{cor}{The vector of correlations (\eqn{r})}
 
@@ -40,7 +40,7 @@ pseudovalidation(
 \item{cluster}{A \code{cluster} object from the \code{parallel} package for parallel computing}
 }
 \value{
-the results of the pseudovalidation, i.e. \eqn{f(\lambda)}
+the results of the pseudovalidation, i.e. \eqn{f(\lambda, s, \lambda_{ct})}
 }
 \description{
 Performs `pseudovalidation' to select the best \eqn{\lambda} value in lassosum
