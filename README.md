@@ -7,7 +7,7 @@ Cross-trait penalized regression using summary statistics
 ## Installation
 
     install.packages("devtools")
-    devtools::install_github("yingxi-kaylee/ssCTRP")
+    devtools::install_github("yingxi-kaylee/ssCTPR")
     
 ## References
 
