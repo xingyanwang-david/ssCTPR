@@ -82,7 +82,7 @@ lassosum_ct <- function(cor, bfile,
   if(length(unique(chunks$chunks.blocks)) > 1) {
     if(is.null(cluster)) {
       results.list <- lapply(unique(chunks$chunks.blocks), function(i) {
-        lassosum_ct(cor=cor[chunks$chunks==i,], bfile=bfile, lambda=lambda, shrink=shrink, 
+        lassosum_ct(cor=cor[chunks$chunks==i,], bfile=bfile, lambda=lambda, shrink=shrink, lambda_ct=lambda_ct,
                  thr=thr, init=init[rep(chunks$chunks==i,traits)], trace=trace-0.5, maxiter=maxiter, 
                  blocks[chunks$chunks==i], keep=parsed$keep, extract=chunks$extracts[[i]], 
                  mem.limit=mem.limit, chunks=chunks$chunks[chunks$chunks==i])
@@ -90,11 +90,11 @@ lassosum_ct <- function(cor, bfile,
     } else {
       Cor <- cor; Bfile <- bfile; Lambda <- lambda; Shrink=shrink; Thr <- thr; 
       Maxiter=maxiter; Mem.limit <- mem.limit ; Trace <- trace; Init <- init; 
-      Blocks <- blocks
+      Blocks <- blocks; Lambda_ct=lambda_ct
       # Make sure these are defined within the function and so copied to 
       # the child processes
       results.list <- parallel::parLapplyLB(cluster, unique(chunks$chunks.blocks), function(i) {
-        lassosum_ct(cor=Cor[chunks$chunks==i,], bfile=Bfile, lambda=Lambda, 
+        lassosum_ct(cor=Cor[chunks$chunks==i,], bfile=Bfile, lambda=Lambda, lambda_ct=Lambda_ct,
                  shrink=Shrink, thr=Thr, init=Init[rep(chunks$chunks==i,traits)], 
                  trace=trace-0.5, maxiter=Maxiter, 
                  blocks=Blocks[chunks$chunks==i], 

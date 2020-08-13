@@ -175,6 +175,7 @@ pseudovalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
                          keep=keep, remove=remove,
                          sd=ls.pipeline$sd, 
                          cluster=cluster, ...)
+  cat("YINGXI: function pseudovalidation done\n")
   for(ii in 1:length(pv)){
     pv[[ii]][is.na(pv[[ii]])] <- -Inf
   }
