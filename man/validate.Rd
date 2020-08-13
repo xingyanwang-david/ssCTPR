@@ -31,7 +31,7 @@ validate(...)
 
 \item{test.bfile}{The (\href{https://www.cog-genomics.org/plink2/formats#bed}{PLINK bfile} for the test dataset}
 
-\item{keep}{Participants to keep (see \code{\link{lassosum}} for more details)}
+\item{keep}{Participants to keep (see \code{\link{lassosum_ct}} for more details)}
 
 \item{remove}{Participants to remove}
 
@@ -43,7 +43,7 @@ validate(...)
 
 \item{trace}{Controls amount of output}
 
-\item{destandardize}{Should coefficients from \code{\link{lassosum}} be 
+\item{destandardize}{Should coefficients from \code{\link{lassosum_ct}} be 
 destandardized using test dataset standard deviations before being returned?}
 
 \item{plot}{Should the validation plot be plotted?}

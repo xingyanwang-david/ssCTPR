@@ -9,10 +9,10 @@ pseudovalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
   #' @title Function to perform pseudovalidation from a lassosum.pipeline object
   #' @param ls.pipeline A lassosum.pipeline object
   #' @param test.bfile The (\href{https://www.cog-genomics.org/plink2/formats#bed}{PLINK bfile} for the test dataset 
-  #' @param keep Participants to keep (see \code{\link{lassosum}} for more details)
+  #' @param keep Participants to keep (see \code{\link{lassosum_ct}} for more details)
   #' @param remove Participants to remove
   #' @param trace Controls amount of output
-  #' @param destandardize Should coefficients from \code{\link{lassosum}} be 
+  #' @param destandardize Should coefficients from \code{\link{lassosum_ct}} be 
   #' destandardized using test dataset standard deviations before being returned?
   #' @param plot Should the validation plot be plotted? 
   #' @param exclude.ambiguous Should ambiguous SNPs (C/G, A/T) be excluded? 

@@ -8,7 +8,7 @@ splitvalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
   #' @title Function to perform split-validation using output from lassosum.pipeline with external phenotype
   #' @param ls.pipeline A lassosum.pipeline object
   #' @param test.bfile The (\href{https://www.cog-genomics.org/plink2/formats#bed}{PLINK bfile} for the test dataset 
-  #' @param keep Participants to keep (see \code{\link{lassosum}} for more details)
+  #' @param keep Participants to keep (see \code{\link{lassosum_ct}} for more details)
   #' @param remove Participants to remove
   #' @param pheno A vector of phenotype OR a \code{data.frame} with 3 columns, the first 2 columns being headed "FID" and "IID", OR a filename for such a data.frame
   #' @param covar A matrix of covariates OR a \code{data.frame} with 3 or more columns, the first 2 columns being headed "FID" and "IID", OR a filename for such a data.frame
