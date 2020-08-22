@@ -21,7 +21,8 @@ splitvalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
   #' @export
   stopifnot(class(ls.pipeline) == "lassosum.pipeline")
   
-  results <- list(lambda=ls.pipeline$lambda, s=ls.pipeline$s)
+  lambda_cts <- as.numeric(names(ls.pipeline$beta))
+  results <- list(lambda=ls.pipeline$lambda, s=ls.pipeline$s, lambda_ctp=lambda_cts)
   
   rematch <- rematch # Forces an evaluation at this point
   if(is.null(test.bfile)) {
@@ -52,11 +53,13 @@ splitvalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
   }
 
   ### Split-validation ###
-  results <- list(lambda=ls.pipeline$lambda, s=ls.pipeline$s)
-  best.s <- best.lambda <- best.validation.result <- numeric(0)
+  #results <- list(lambda=ls.pipeline$lambda, s=ls.pipeline$s)
+  results <- list(lambda=ls.pipeline$lambda, s=ls.pipeline$s, lambda_ctp=lambda_cts)
+
+  best.s <- best.lambda <- best.ct <- best.validation.result <- numeric(0)
   best.pgs <- pheno * NA
   best.beta <- numeric(0)
-  validation.table <- data.frame()
+  validation.table <- list()
   PGS <- list()
   for(s in 1:2) {
     if(is.null(parsed.test$keep)) {
@@ -71,19 +74,26 @@ splitvalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
       covar2 <- if(!is.null(covar)) covar[keeps,] else NULL
     }
     if(trace) cat(paste0("Split ", s, ":\n")) 
+    ## need modify? done
     v <- validate(ls.pipeline, keep=keep, pheno=pheno2, covar=covar2, 
                   test.bfile=test.bfile, trace=trace, rematch=rematch, ...)
     best.s <- c(best.s, v$best.s)
     best.lambda <- c(best.lambda, v$best.lambda)
+    best.ct <- c(best.ct, v$best.ct)
     PGS[[s]] <- v$pgs
     best.beta <- cbind(best.beta, v$best.beta)
-    validation.table <- rbind(validation.table, v$validation.table)
+    
+    #need change:done
+    for(ii in 1:length(v$validation.table)){
+      validation.table[[as.character(ii)]] <- rbind(validation.table[[as.character(ii)]], v$validation.table[[as.character(ii)]])
+    }
+    #validation.table <- rbind(validation.table, v$validation.table)
     # best.validation.result <- c(best.validation.result, v$best.validation.result)
   }
-  S <- v$s; L <- v$lambda
+  S <- v$s; L <- v$lambda; CT <- v$lambda_ctp
   for(s in 1:2) {
-    best.pgs[split == 3-s] <- PGS[[3-s]][[which(S == best.s[s])]][,L == best.lambda[s]]
-  }
+    best.pgs[split == 3-s] <- PGS[[3-s]][[which(CT == best.ct[s])]][[which(S == best.s[s])]][,L == best.lambda[s]]
+  } ## need modify? done
 
   #### Results table ####
   if(is.null(phcovar$table)) {
