@@ -75,8 +75,8 @@ splitvalidate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
     }
     if(trace) cat(paste0("Split ", s, ":\n")) 
     ## need modify? done
-    v <- validate(ls.pipeline, keep=keep, pheno=pheno2, covar=covar2, 
-                  test.bfile=test.bfile, trace=trace, rematch=rematch, ...)
+    v <- validate.lassosum.pipeline(ls.pipeline, keep=keep, pheno=pheno2, covar=covar2, 
+                  test.bfile=test.bfile, trace=trace, rematch=rematch)#, ...)
     best.s <- c(best.s, v$best.s)
     best.lambda <- c(best.lambda, v$best.lambda)
     best.ct <- c(best.ct, v$best.ct)
