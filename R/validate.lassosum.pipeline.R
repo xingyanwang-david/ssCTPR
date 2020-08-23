@@ -84,6 +84,7 @@ validate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
                        ref.chr = "V1", ref.snp="V2", ref.pos="V4", ref.alt="V5", ref.ref="V6", 
                        rm.duplicates = T, exclude.ambiguous = exclude.ambiguous, 
                        silent=T)
+    cat("YINGXI: line87")
     beta <- list()
     for(ii in 1:length(ls.pipeline$beta)){
       beta[[as.character(ii)]] <- lapply(ls.pipeline$beta[[ii]], function(x) as.matrix(Matrix::Diagonal(x=m$rev) %*% x[m$order,]))
@@ -94,7 +95,7 @@ validate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
     #   as.matrix(Matrix::Diagonal(x=m$rev) %*% x[m$order, ]))
     
     if(trace) cat("Calculating PGS...\n")
-    
+    cat("YINGXI: line98")
     pgs <- list()
     for(ii in 1:length(beta)){
       pgs[[as.character(ii)]] <- lapply(beta[[ii]], function(x) pgs(bfile=test.bfile, weights = x, 
@@ -106,6 +107,7 @@ validate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
     #                                     keep=parsed.test$keep, 
     #                                     cluster=cluster, 
     #                                     trace=trace-1))
+    cat("YINGXI: line110")
     names(pgs) <- names(ls.pipeline$beta)
     results <- c(results, list(pgs=pgs))
 
@@ -114,9 +116,9 @@ validate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
       !identical(parsed.test$keep, ls.pipeline$keep.test)
     if(is.null(ls.pipeline$pgs) || recal) { ## need to modify? solved
       if(trace) cat("Calculating PGS...\n")
-      
+      cat("YINGXI: line119")
       pgs <- list()
-      for(ii in 1:length(beta)){
+      for(ii in 1:length(ls.pipeline$beta)){
         pgs[[as.character(ii)]] <- lapply(ls.pipeline$beta[[ii]], function(x) pgs(bfile=test.bfile, weights = x, 
                                                                       extract=ls.pipeline$test.extract, keep=parsed.test$keep, 
                                                                       cluster=cluster))
@@ -127,6 +129,7 @@ validate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
       #                                     keep=parsed.test$keep, 
       #                                     cluster=cluster, 
       #                                     trace=trace-1))
+      cat("YINGXI: line132")
       names(pgs) <- names(ls.pipeline$beta)
       results <- c(results, list(pgs=pgs))
     } else {
