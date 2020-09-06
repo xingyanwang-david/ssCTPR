@@ -448,8 +448,8 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
           if(ttt!=tt){
             ctp+=x(ttt*p+j);
           }
-          ctp*=lambda_ct;
         }
+        ctp*=lambda_ct;
         if(lambda_ct==0){
           ctp=0;  //make sure the cross-trait penalty is 0
         }
