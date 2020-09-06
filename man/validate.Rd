@@ -17,7 +17,7 @@ validate(...)
   validate.function = function(x, y) cor(x, y, use = "complete"),
   trace = 1,
   destandardize = F,
-  plot = T,
+  plot = F,
   exclude.ambiguous = T,
   cluster = NULL,
   rematch = !is.null(test.bfile),

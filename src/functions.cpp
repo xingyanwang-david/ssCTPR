@@ -428,6 +428,9 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
   Lambda2.fill(lambda2);
   arma::vec Lambda_ct(p); 
   Lambda_ct.fill((traits-1)*lambda_ct);
+  if(lambda_ct==0){
+    Lambda_ct.fill(0);
+  }
   
   arma::vec denom=diag + Lambda2 + Lambda_ct;
   
@@ -447,6 +450,10 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
           }
           ctp*=lambda_ct;
         }
+        if(lambda_ct==0){
+          ctp=0;  //make sure the cross-trait penalty is 0
+        }
+       // Rcout << "ctp:" << ctp <<std::endl;
         if(std::abs(t+ctp)-lambda1 > 0.0){
           if(t+ctp-lambda1 > 0.0){
             x(tt*p+j)=t-lambda1+ctp/denom(j);
@@ -460,13 +467,19 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
         
         if(x(tt*p+j)==xj) continue;
         del=x(tt*p+j)-xj;   // x(tt*p+j) is new, xj is old
-        dlx=std::max(dlx,std::abs(del));
-        
+        //dlx=std::max(dlx,std::abs(del));
+        // if(j==1 || j==100 || j==200){
+        //   Rcout << "del:" << del <<std::endl;
+        // }
         yhat.subvec(tt*n, (tt+1)*n-1) += del*X.col(j);
+        
+        if(tt==0){
+          dlx=std::max(dlx,std::abs(del)); //only update when consider primary trait
+        }
       } 
     }
     checkUserInterrupt();
-    if(trace > 0) Rcout << "Iteration: " << k << "\n";
+    //if(trace > 0) Rcout << "Iteration: " << k << ": " << "dlx:" << dlx << "\n";
     
     if(dlx < thr) {
       conv=1;
@@ -487,14 +500,18 @@ int repelnet(double lambda1, double lambda2, double lambda_ct, arma::vec& diag, 
   int out=1;
   int traits = r.n_cols;
   int n = X.n_rows;
+  
   for(int i=0;i < startvec.n_elem; i++) {
     int len_single_trait = endvec(i)-startvec(i)+1;
     arma::vec xtouse(len_single_trait*traits);
     arma::vec yhattouse(n*traits);
+    
+    Rcout << "ABC" << std::endl;
     for(int ii=0; ii<traits; ii++){
       xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1) = x.subvec(startvec(i)+ii*X.n_cols, endvec(i)+ii*X.n_cols);
       yhattouse.subvec(n*ii,n*(ii+1)-1) = X.cols(startvec(i), endvec(i)) * xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1);
     }
+    Rcout << "DEF" << std::endl;
     
     int out2=elnet(lambda1, lambda2, lambda_ct,
                    diag.subvec(startvec(i), endvec(i)), 
@@ -502,10 +519,16 @@ int repelnet(double lambda1, double lambda2, double lambda_ct, arma::vec& diag, 
                    r.rows(startvec(i), endvec(i)),
                    thr, xtouse, 
                    yhattouse, trace - 1, maxiter);
+    Rcout << "GHI" << std::endl;
+    
     for(int ii=0; ii<traits; ii++){
       x.subvec(startvec(i)+ii*X.n_cols, endvec(i)+ii*X.n_cols) = xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1);
     }
+    Rcout << "JKL" << std::endl;
+    
     yhat += yhattouse; //?
+    Rcout << "MNO" << std::endl;
+    
     if(trace > 0) Rcout << "Block: " << i << "\n";
     out=std::min(out, out2);
   }
@@ -673,12 +696,12 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
   // c) multiply by constatant factor
   // d) perfrom elnet
   
-  // Rcout << "ABC" << std::endl;
+   Rcout << "ABC" << std::endl;
   int i,j;
   int traits = r.n_cols;
   arma::mat genotypes = genotypeMatrix(fileName, N, P, col_skip_pos, col_skip, keepbytes,
                                        keepoffset, 1);
-  //Rcout << "DEF" << std::endl;
+  Rcout << "DEF" << std::endl;
   int p = genotypes.n_cols;
   if (genotypes.n_cols != r.n_rows) {
     throw std::runtime_error("Number of positions in reference file is not "
