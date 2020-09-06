@@ -437,17 +437,16 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
   int conv=0;
   for(int k=0;k<maxiter ;k++) {
     dlx=0.0;
-    for(int tt=0; tt<traits;tt++){
-      for(j=0; j < p; j++) {
+    //for(int tt=0; tt<traits;tt++){
+    int tt=0; 
+    for(j=0; j < p; j++) {
         xj=x(tt*p+j);
         x(tt*p+j)=0.0;
         t= diag(j) * xj + r(j,tt) - arma::dot(X.col(j), yhat.subvec(tt*n, (tt+1)*n-1));
         // Think of it as r(j) - (dotproduct(X.col(j), yhat) - diag(j)*xj)
         ctp=0.0;
-        for(int ttt=0;ttt<traits;ttt++){
-          if(ttt!=tt){
-            ctp+=x(ttt*p+j);
-          }
+        for(int ttt=1;ttt<traits;ttt++){
+            ctp+=r(j,ttt);
         }
         ctp*=lambda_ct;
         if(lambda_ct==0){
@@ -476,8 +475,8 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
         if(tt==0){
           dlx=std::max(dlx,std::abs(del)); //only update when consider primary trait
         }
-      } 
-    }
+    } 
+    //}
     checkUserInterrupt();
     //if(trace > 0) Rcout << "Iteration: " << k << ": " << "dlx:" << dlx << "\n";
     
