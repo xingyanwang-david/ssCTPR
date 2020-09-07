@@ -8,31 +8,44 @@
 #' 
 #' @rdname subset.lassosum.pipeline
 #' @export
-subset.lassosum.pipeline <- function(lassosum.pipeline, s=NULL, lambda=NULL) {
+subset.lassosum.pipeline <- function(lassosum.pipeline, s=NULL, lambda=NULL, lambda_ct=NULL) {
   
   err <- function(param, value) {
     stop(paste("There is no", param, "equalling", value, "in lassosum.pipeline"))
   }
   lp <- lassosum.pipeline
   
+  
+  if(!is.null(lambda_ct)) {
+    w <- which(lp$lambda_ct %in% lambda_ct)
+    if(length(w) == 0) err("lambda_ct", lambda_ct)
+    lp$lambda_ct <- lp$lambda_ct[w]
+    lp$beta <- lp$beta[w]
+    lp$pgs <- lp$pgs[w]
+  }
+  
   if(!is.null(s)) {
     w <- which(lp$s %in% s)
     if(length(w) == 0) err("s", s)
     lp$s <- lp$s[w]
-    lp$beta <- lp$beta[w]
-    lp$pgs <- lp$pgs[w]
+    for(i in 1:length(lp$lambda_ct)){
+      lp$beta[[i]] <- lp$beta[[i]][w]
+      lp$pgs[[i]] <- lp$pgs[[i]][w] 
+    }
   }
   
   if(!is.null(lambda)) {
     w <- which(lp$lambda %in% lambda)
     if(length(w) == 0) err("lambda", lambda)
     lp$lambda <- lp$lambda[w]
-    for(i in 1:length(lp$s)) {
-      lp$beta[[i]] <- lp$beta[[i]][,w, drop=F]
-      lp$pgs[[i]] <- lp$pgs[[i]][,w, drop=F]
+    for(j in 1:length(lp$lambda_ct)){
+      for(i in 1:length(lp$s)) {
+        lp$beta[[j]][[i]] <- lp$beta[[j]][[i]][,w, drop=F]
+        lp$pgs[[j]][[i]] <- lp$pgs[[j]][[i]][,w, drop=F]
+      } 
     }
   }
-  
+
   #' @return A lassosum.pipeline object
   class(lp) <- "lassosum.pipeline"
   return(lp)

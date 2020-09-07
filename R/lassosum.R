@@ -52,8 +52,8 @@ lassosum_ct <- function(cor, bfile,
   cor <- as.matrix(cor)
   stopifnot(sum(apply(cor,2,mode)!="numeric")==0)
   stopifnot(!any(is.na(cor)))
-  if(any(abs(cor) > 1)) warning("Some abs(cor) > 1")
-  if(any(abs(cor) == 1)) warning("Some abs(cor) == 1")
+  if(any(abs(cor[,1]) > 1)) warning("Some abs(cor) > 1")
+  if(any(abs(cor[,1]) == 1)) warning("Some abs(cor) == 1")
   if(length(shrink) > 1) stop("Only 1 shrink parameter at a time.")
   
   parsed <- parseselect(bfile, extract=extract, exclude = exclude, 
@@ -83,7 +83,7 @@ lassosum_ct <- function(cor, bfile,
     if(is.null(cluster)) {
       results.list <- lapply(unique(chunks$chunks.blocks), function(i) {
         lassosum_ct(cor=cor[chunks$chunks==i,], bfile=bfile, lambda=lambda, shrink=shrink, lambda_ct=lambda_ct,
-                 thr=thr, init=init[rep(chunks$chunks==i,traits)], trace=trace-0.5, maxiter=maxiter, 
+                 thr=thr, init=init[chunks$chunks==i], trace=trace, maxiter=maxiter, 
                  blocks[chunks$chunks==i], keep=parsed$keep, extract=chunks$extracts[[i]], 
                  mem.limit=mem.limit, chunks=chunks$chunks[chunks$chunks==i])
       })
@@ -95,7 +95,7 @@ lassosum_ct <- function(cor, bfile,
       # the child processes
       results.list <- parallel::parLapplyLB(cluster, unique(chunks$chunks.blocks), function(i) {
         lassosum_ct(cor=Cor[chunks$chunks==i,], bfile=Bfile, lambda=Lambda, lambda_ct=Lambda_ct,
-                 shrink=Shrink, thr=Thr, init=Init[rep(chunks$chunks==i,traits)], 
+                 shrink=Shrink, thr=Thr, init=Init[chunks$chunks==i], 
                  trace=trace-0.5, maxiter=Maxiter, 
                  blocks=Blocks[chunks$chunks==i], 
                  keep=parsed$keep, extract=chunks$extracts[[i]], 
@@ -124,8 +124,8 @@ lassosum_ct <- function(cor, bfile,
     keepoffset <- pos %% 4 * 2
   }
   
-  if(is.null(init)) init <- rep(0.0, parsed$p * traits) else {
-    stopifnot(is.numeric(init) && (length(init)/traits) == parsed$p)
+  if(is.null(init)) init <- rep(0.0, parsed$p) else {
+    stopifnot(is.numeric(init) && length(init) == parsed$p)
   }
  # print(extract2[[1]])
  # print(extract2[[2]])
@@ -143,7 +143,7 @@ lassosum_ct <- function(cor, bfile,
                r=cor, N=parsed$N, P=parsed$P, 
                col_skip_pos=extract2[[1]], col_skip=extract2[[2]],
                keepbytes=keepbytes, keepoffset=keepoffset, 
-               thr=1e-4, x=init, trace=trace, maxiter=maxiter,
+               thr=thr, x=init, trace=trace, maxiter=maxiter,
                startvec=Blocks$startvec, endvec=Blocks$endvec)
     })
   }

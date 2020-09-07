@@ -17,53 +17,40 @@ indeplasso_ct <- function(coef, lambda=exp(seq(log(0.001), log(0.1), length.out=
   coef <- as.matrix(coef)
   traits <- ncol(coef)
   p <- nrow(coef)
-  # single trait
-  #results <- outer(coef, rep(NA, length(lambda)))
-  # for(i in 1:length(lambda)) {
-  #   results[,i] <- sign(coef) * pmax((abs(coef) - lambda[i]),0)
-  # }
   
-  indeplasso_fixed_ctp <- function(lambda_ct){
-    results <- matrix(0,ncol = length(lambda), nrow = length(coef))
-    conv <- rep(NA,length(lambda))
-    
+  if(traits==1){ # single trait
+    results <- matrix(0,ncol = length(lambda), p)
     for(i in 1:length(lambda)) {
-      for(k in 1:maxiter) {
-        dlx <- 0.0
-        #results[,i] <- sign(coef) * pmax((abs(coef) - lambda[i]),0)
-        for (tt in 1:traits) {
-          for (jj in 1:p) {
-            xold <- results[(tt-1)*p+jj,i]
-            results[(tt-1)*p+jj,i] <- 0.0
-            ctp <- lambda_ct * sum(results[(0:(traits-1))*p+jj,i])
-            if((coef[jj,tt]+ctp)>lambda[i]){
-              results[(tt-1)*p+jj,i] <- (coef[jj,tt]+ctp-lambda[i])/(1+lambda_ct*(traits-1))
-            } else if((coef[jj,tt]+ctp)< -lambda[i]){
-              results[(tt-1)*p+jj,i] <- (coef[jj,tt]+ctp+lambda[i])/(1+lambda_ct*(traits-1))
-            } else{
-            }
-            del <- results[(tt-1)*p+jj,i]-xold
-            dlx <- max(dlx,abs(del))
-          }
-        }
-        if(dlx<thr){
-          conv[i] <- 1
-          break
-        }
-      }
+      results[,i] <- sign(coef) * pmax((abs(coef) - lambda[i]),0)
     }
-    return(list(lambda=lambda, beta=results, conv=conv))
+    ls <- list()
+    ls[[as.character(0)]] <- list(lambda=lambda, beta=results)
+  } else{ # cross traits
+    indeplasso_fixed_ctp <- function(lambda_ct){
+      results <- matrix(0,ncol = length(lambda), p)
+      if(traits==2){
+        ctp <- coef[,2]
+      } else{
+        ctp <- apply(coef[,-1], 1, sum)
+      }
+      ctp <- lambda_ct*ctp
+      for(i in 1:length(lambda)) {
+        results[,i] <- sign(coef[,1]+ctp) * pmax((abs(coef[,1]+ctp) - lambda[i]),0)
+      }
+      
+      return(list(lambda=lambda, beta=results))
+    }
+    
+    ls <- list()
+    if(length(lambda_ct) > 0) {
+      if(trace) cat("Running independent lassosum ...\n")
+      ls <- lapply(lambda_ct, function(ct) {
+        if(trace) cat("lambda_ct = ", ct, "\n")
+        indeplasso_fixed_ctp(ct)
+      })
+    }
+    names(ls) <- as.character(lambda_ct)
   }
-  
-  ls <- list()
-  if(length(lambda_ct) > 0) {
-    if(trace) cat("Running independent lassosum ...\n")
-    ls <- lapply(lambda_ct, function(ct) {
-      if(trace) cat("lambda_ct = ", ct, "\n")
-      indeplasso_fixed_ctp(ct)
-    })
-  }
-  names(ls) <- as.character(lambda_ct)
   
   #' @return A list with the length equal to the number of lambda_ct, each element of the list has teh following elements
   #' \item{lambda}{Same as \code{lambda} in input}

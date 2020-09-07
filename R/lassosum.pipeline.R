@@ -124,9 +124,9 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   } else if(is.null(A1) || is.null(A2)) {
     # message("Matching on 1 allele only.")
   }
-
+  cor <- as.matrix(cor)
   stopifnot(!any(is.na(cor)))
-  stopifnot(all(cor > -1 & cor < 1))
+  stopifnot(all(cor[,1] > -1 & cor[,1] < 1))
 
   if(chrpos) {
     stopifnot(length(chr) == length(pos))
@@ -326,7 +326,7 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
     if(trace) cat("Running lassosum with s=1...\n")
     il <- indeplasso_ct(ss3[,5:(ncol(ss3)-1)], lambda=lambda, lambda_ct = lambda_ct, trace = trace)
   } else {
-    il <- list(beta=matrix(0, nrow=length(m.test$order)*traits, ncol=length(lambda)))
+    il <- list(beta=matrix(0, nrow=length(m.test$order), ncol=length(lambda)))
   } ## else need modify??
 
   ### Impute indeplasso estimates to SNPs not in reference panel ###
@@ -384,9 +384,9 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
     if(trace) cat("De-standardize lassosum coefficients ...\n")
     ### regression coefficients = correlation coefficients / sd(X) * sd(y) ###
     sd[sd <= 0] <- Inf # Do not want infinite beta's!
-    if(traits>1){
-      sd <- rep(sd,traits)
-    }
+    # if(traits>1){
+    #   sd <- rep(sd,traits)
+    # }
     for(ii in 1:length(beta)){
       beta[[ii]] <- lapply(beta[[ii]], function(x) as.matrix(Matrix::Diagonal(x=1/sd) %*% x))
     }
@@ -396,7 +396,7 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   results <- list(beta=beta, test.extract=m.test$ref.extract, 
                   also.in.refpanel=m.common$ref.extract, 
                   sumstats=ss3, sd=sd, 
-                  lambda=lambda, s=s, 
+                  lambda=lambda, s=s, lambda_ct=lambda_ct,
                   test.bfile=test.bfile, 
                   keep.test=parsed.test$keep, 
                   ref.bfile=ref.bfile, 
@@ -428,11 +428,11 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   ### Polygenic scores 
   if(trace) cat("Calculating polygenic scores ...\n")
   beta_primary <- beta
-  if(traits>1){
-    for(i in 1:length(beta_primary)) {
-      beta_primary[[i]] <- lapply(beta_primary[[i]], function(x) x[1:(nrow(x)/traits),])
-    }
-  }
+  # if(traits>1){
+  #   for(i in 1:length(beta_primary)) {
+  #     beta_primary[[i]] <- lapply(beta_primary[[i]], function(x) x[1:(nrow(x)/traits),])
+  #   }
+  # }
   
   pgs <- list()
   for(ii in 1:length(beta_primary)){

@@ -417,8 +417,8 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
   int traits=r.n_cols;
   
   if(r.n_rows != p) stop("r.n_rows != p");
-  if(x.n_elem != p*traits) stop("x.n_elem != p*traits");
-  if(yhat.n_elem != n*traits) stop("yhat.n_elem != n*traits");
+  if(x.n_elem != p) stop("x.n_elem != p");
+  if(yhat.n_elem != n) stop("yhat.n_elem != n");
   if(diag.n_elem != p) stop("diag.n_elem != p"); 
   
   double dlx,del,t,xj,ctp;
@@ -428,57 +428,52 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
   Lambda2.fill(lambda2);
   arma::vec Lambda_ct(p); 
   Lambda_ct.fill((traits-1)*lambda_ct);
-  if(lambda_ct==0){
-    Lambda_ct.fill(0);
-  }
+  // if(lambda_ct==0){
+  //   Lambda_ct.fill(0);
+  // }
   
   arma::vec denom=diag + Lambda2 + Lambda_ct;
   
   int conv=0;
   for(int k=0;k<maxiter ;k++) {
     dlx=0.0;
-    //for(int tt=0; tt<traits;tt++){
     int tt=0; 
     for(j=0; j < p; j++) {
-        xj=x(tt*p+j);
-        x(tt*p+j)=0.0;
-        t= diag(j) * xj + r(j,tt) - arma::dot(X.col(j), yhat.subvec(tt*n, (tt+1)*n-1));
+        xj=x(j);
+        x(j)=0.0;
+        t= diag(j) * xj + r(j,0) - arma::dot(X.col(j), yhat);
         // Think of it as r(j) - (dotproduct(X.col(j), yhat) - diag(j)*xj)
         ctp=0.0;
-        for(int ttt=1;ttt<traits;ttt++){
-            ctp+=r(j,ttt);
+        for(int tt=1;tt<traits;tt++){
+            ctp+=r(j,tt);
         }
         ctp*=lambda_ct;
-        if(lambda_ct==0){
-          ctp=0;  //make sure the cross-trait penalty is 0
-        }
+        // if(lambda_ct==0){
+        //   ctp=0;  //make sure the cross-trait penalty is 0
+        // }
        // Rcout << "ctp:" << ctp <<std::endl;
         if(std::abs(t+ctp)-lambda1 > 0.0){
           if(t+ctp-lambda1 > 0.0){
-            x(tt*p+j)=t-lambda1+ctp/denom(j);
+            x(j)=t-lambda1+ctp/denom(j);
           } else{
-            x(tt*p+j)=t+lambda1+ctp/denom(j);
+            x(j)=t+lambda1+ctp/denom(j);
           }
         } 
         // abs(t)-lambda1 > 0 => (t > 0 && t > lambda1) || (t < 0 && t < -lambda1)
         // In either case, there's shrinkage, but not to zero
         // If (t > 0 && t < lambda1) || (t < 0 && t > -lambda1), 0 is the minimum
         
-        if(x(tt*p+j)==xj) continue;
-        del=x(tt*p+j)-xj;   // x(tt*p+j) is new, xj is old
+        if(x(j)==xj) continue;
+        del=x(j)-xj;   // x(j) is new, xj is old
         //dlx=std::max(dlx,std::abs(del));
         // if(j==1 || j==100 || j==200){
         //   Rcout << "del:" << del <<std::endl;
         // }
-        yhat.subvec(tt*n, (tt+1)*n-1) += del*X.col(j);
-        
-        if(tt==0){
-          dlx=std::max(dlx,std::abs(del)); //only update when consider primary trait
-        }
+        yhat += del*X.col(j);
+        dlx=std::max(dlx,std::abs(del)); 
     } 
-    //}
     checkUserInterrupt();
-    //if(trace > 0) Rcout << "Iteration: " << k << ": " << "dlx:" << dlx << "\n";
+    if(trace > 0) Rcout << "Iteration: " << k << ": " << "dlx:" << dlx << "\n";
     
     if(dlx < thr) {
       conv=1;
@@ -497,20 +492,23 @@ int repelnet(double lambda1, double lambda2, double lambda_ct, arma::vec& diag, 
   // Repeatedly call elnet by blocks...
   int nreps=startvec.n_elem;
   int out=1;
-  int traits = r.n_cols;
-  int n = X.n_rows;
+  // int traits = r.n_cols;
+  // int n = X.n_rows;
   
   for(int i=0;i < startvec.n_elem; i++) {
-    int len_single_trait = endvec(i)-startvec(i)+1;
-    arma::vec xtouse(len_single_trait*traits);
-    arma::vec yhattouse(n*traits);
+    // int len = endvec(i)-startvec(i)+1;
+    // arma::vec xtouse(len);
+    // arma::vec yhattouse(n);
+    // for(int ii=0; ii<traits; ii++){
+    //   xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1) = x.subvec(startvec(i)+ii*X.n_cols, endvec(i)+ii*X.n_cols);
+    //   yhattouse.subvec(n*ii,n*(ii+1)-1) = X.cols(startvec(i), endvec(i)) * xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1);
+    // }
+    Rcout << "repelnet" << std::endl;
     
-    Rcout << "ABC" << std::endl;
-    for(int ii=0; ii<traits; ii++){
-      xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1) = x.subvec(startvec(i)+ii*X.n_cols, endvec(i)+ii*X.n_cols);
-      yhattouse.subvec(n*ii,n*(ii+1)-1) = X.cols(startvec(i), endvec(i)) * xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1);
-    }
-    Rcout << "DEF" << std::endl;
+    arma::vec xtouse=x.subvec(startvec(i), endvec(i));
+    arma::vec yhattouse=X.cols(startvec(i), endvec(i)) * xtouse;
+    
+    //Rcout << "DEF" << std::endl;
     
     int out2=elnet(lambda1, lambda2, lambda_ct,
                    diag.subvec(startvec(i), endvec(i)), 
@@ -518,15 +516,17 @@ int repelnet(double lambda1, double lambda2, double lambda_ct, arma::vec& diag, 
                    r.rows(startvec(i), endvec(i)),
                    thr, xtouse, 
                    yhattouse, trace - 1, maxiter);
-    Rcout << "GHI" << std::endl;
+    //Rcout << "GHI" << std::endl;
     
-    for(int ii=0; ii<traits; ii++){
-      x.subvec(startvec(i)+ii*X.n_cols, endvec(i)+ii*X.n_cols) = xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1);
-    }
-    Rcout << "JKL" << std::endl;
+    // for(int ii=0; ii<traits; ii++){
+    //   x.subvec(startvec(i)+ii*X.n_cols, endvec(i)+ii*X.n_cols) = xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1);
+    // }
+    //Rcout << "JKL" << std::endl;
     
+    x.subvec(startvec(i), endvec(i))=xtouse;
     yhat += yhattouse; //?
-    Rcout << "MNO" << std::endl;
+    
+    //Rcout << "MNO" << std::endl;
     
     if(trace > 0) Rcout << "Block: " << i << "\n";
     out=std::min(out, out2);
@@ -695,12 +695,12 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
   // c) multiply by constatant factor
   // d) perfrom elnet
   
-   Rcout << "ABC" << std::endl;
+  Rcout << "runElnet" << std::endl;
   int i,j;
   int traits = r.n_cols;
   arma::mat genotypes = genotypeMatrix(fileName, N, P, col_skip_pos, col_skip, keepbytes,
                                        keepoffset, 1);
-  Rcout << "DEF" << std::endl;
+  //Rcout << "DEF" << std::endl;
   int p = genotypes.n_cols;
   if (genotypes.n_cols != r.n_rows) {
     throw std::runtime_error("Number of positions in reference file is not "
@@ -712,10 +712,10 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
   genotypes *= sqrt(1.0 - shrink);
   
   arma::Col<int> conv(lambda.n_elem);
-  int len = r.n_rows * traits;
+  int len = r.n_rows;
   
   arma::mat beta(len, lambda.n_elem);
-  arma::mat pred(genotypes.n_rows * traits, lambda.n_elem); pred.zeros();
+  arma::mat pred(genotypes.n_rows, lambda.n_elem); pred.zeros();
   arma::vec out(lambda.n_elem);
   arma::vec loss(lambda.n_elem);
   arma::vec diag(r.n_rows); diag.fill(1.0 - shrink); 
@@ -727,7 +727,7 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
   // Rcout << "LMN" << std::endl;
   
   arma::vec fbeta(lambda.n_elem);
-  arma::vec yhat(genotypes.n_rows * traits);
+  arma::vec yhat(genotypes.n_rows);
   // yhat = genotypes * x;
   
   
@@ -741,24 +741,20 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
     beta.col(i) = x;
     for(j=0; j < r.n_rows; j++) {
       if(sd(j) == 0.0) {
-        for(int tt=0; tt<traits; tt++){
-          beta(tt*r.n_rows+j,i) *= shrink;
-        }
+        beta(j,i) *= shrink;
       }
     }
     //if (out(i) != 1) {
     //  throw std::runtime_error("Not converging.....");
     //}
     pred.col(i) = yhat;
-    loss(i) = arma::as_scalar(arma::sum(arma::pow(yhat, 2)) -
-      2.0 * arma::sum(x % r.as_col()));    //need change
+    loss(i) = arma::as_scalar(arma::sum(arma::pow(yhat, 2)) - 2.0 * arma::sum(x % r.col(0)));   
     fbeta(i) =
       arma::as_scalar(loss(i) + 2.0 * arma::sum(arma::abs(x)) * lambda(i) +
       arma::sum(arma::pow(x, 2)) * shrink);
-    for(int tt=0; tt<traits; tt++){
-      for(int ttt=tt+1; ttt<traits;ttt++){
-        fbeta(i)+=(lambda_ct*arma::sum(arma::pow(x.subvec(tt*p,(tt+1)*p-1)-x.subvec(ttt*p,(ttt+1)*p-1),2)));
-      }
+    
+    for(int tt=1; tt<traits; tt++){
+      fbeta(i)+=(lambda_ct*arma::sum(arma::pow(r.col(tt)-x,2)));
     }
   }
   return List::create(Named("lambda") = lambda, 

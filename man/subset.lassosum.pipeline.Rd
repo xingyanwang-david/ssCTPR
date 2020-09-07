@@ -4,7 +4,7 @@
 \alias{subset.lassosum.pipeline}
 \title{Subset a lassosum.pipeline object by lambda and s}
 \usage{
-\method{subset}{lassosum.pipeline}(lassosum.pipeline, s = NULL, lambda = NULL)
+\method{subset}{lassosum.pipeline}(lassosum.pipeline, s = NULL, lambda = NULL, lambda_ct = NULL)
 }
 \arguments{
 \item{lassosum.pipeline}{An object returned by lassosum.pipeline}
