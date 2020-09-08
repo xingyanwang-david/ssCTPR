@@ -421,7 +421,7 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
   if(yhat.n_elem != n) stop("yhat.n_elem != n");
   if(diag.n_elem != p) stop("diag.n_elem != p"); 
   
-  double dlx,del,t,xj,ctp;
+  double dlx_cur, dlx_pre,del,t,xj,ctp;
   int j,i;
 
   arma::vec Lambda2(p); 
@@ -435,10 +435,12 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
   arma::vec denom=diag + Lambda2 + Lambda_ct;
   
   int conv=0;
+  int count=0;
+  dlx_pre=0.0;
   for(int k=0;k<maxiter ;k++) {
-    dlx=0.0;
-    int tt=0; 
+    dlx_cur=0.0;
     for(j=0; j < p; j++) {
+        del=0.0;
         xj=x(j);
         x(j)=0.0;
         t= diag(j) * xj + r(j,0) - arma::dot(X.col(j), yhat);
@@ -458,11 +460,11 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
           } else{
             x(j)=t+lambda1+ctp/denom(j);
           }
-        } 
+        }
+        //Rcout << "coefficient of variants " << j << ": " << x(j) << "\n";
         // abs(t)-lambda1 > 0 => (t > 0 && t > lambda1) || (t < 0 && t < -lambda1)
         // In either case, there's shrinkage, but not to zero
         // If (t > 0 && t < lambda1) || (t < 0 && t > -lambda1), 0 is the minimum
-        
         if(x(j)==xj) continue;
         del=x(j)-xj;   // x(j) is new, xj is old
         //dlx=std::max(dlx,std::abs(del));
@@ -470,12 +472,22 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
         //   Rcout << "del:" << del <<std::endl;
         // }
         yhat += del*X.col(j);
-        dlx=std::max(dlx,std::abs(del)); 
+        dlx_cur=std::max(dlx_cur,std::abs(del)); 
     } 
+    if(std::abs(dlx_cur-dlx_pre)<1e-6){
+      count++;
+    } else{
+      count=0;
+    }
+    dlx_pre=dlx_cur;
     checkUserInterrupt();
-    if(trace > 0) Rcout << "Iteration: " << k << ": " << "dlx:" << dlx << "\n";
+    if(trace > 0) Rcout << "Iteration: " << k << ": " << "dlx:" << dlx_cur << "  count:" << count << "\n";
     
-    if(dlx < thr) {
+    if(dlx_cur < thr) {
+      conv=1;
+      break;
+    }
+    if(count >= 50){
       conv=1;
       break;
     }
@@ -503,7 +515,7 @@ int repelnet(double lambda1, double lambda2, double lambda_ct, arma::vec& diag, 
     //   xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1) = x.subvec(startvec(i)+ii*X.n_cols, endvec(i)+ii*X.n_cols);
     //   yhattouse.subvec(n*ii,n*(ii+1)-1) = X.cols(startvec(i), endvec(i)) * xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1);
     // }
-    Rcout << "repelnet" << std::endl;
+    //Rcout << "repelnet" << std::endl;
     
     arma::vec xtouse=x.subvec(startvec(i), endvec(i));
     arma::vec yhattouse=X.cols(startvec(i), endvec(i)) * xtouse;

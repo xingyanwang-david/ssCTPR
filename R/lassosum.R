@@ -44,7 +44,7 @@ lassosum_ct <- function(cor, bfile,
                      lambda=exp(seq(log(0.001), log(0.1), length.out=20)), 
                      shrink=0.9, 
                      lambda_ct=c(0, 0.06109, 0.13920, 0.24257, 0.38582, 0.59756, 0.94230, 1.60280, 3.37931, 8.5, 15.5, 24.5),
-                     thr=1e-4, init=NULL, trace=0, maxiter=10000, 
+                     thr=1e-4, init=NULL, trace=0, maxiter=1000, 
                      blocks=NULL,
                      keep=NULL, remove=NULL, extract=NULL, exclude=NULL, 
                      chr=NULL, 
@@ -52,6 +52,7 @@ lassosum_ct <- function(cor, bfile,
   cor <- as.matrix(cor)
   stopifnot(sum(apply(cor,2,mode)!="numeric")==0)
   stopifnot(!any(is.na(cor)))
+  cat("maxiter: ", maxiter, "\n")
   if(any(abs(cor[,1]) > 1)) warning("Some abs(cor) > 1")
   if(any(abs(cor[,1]) == 1)) warning("Some abs(cor) == 1")
   if(length(shrink) > 1) stop("Only 1 shrink parameter at a time.")

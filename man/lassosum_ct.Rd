@@ -15,7 +15,7 @@ lassosum_ct(
   thr = 1e-04,
   init = NULL,
   trace = 0,
-  maxiter = 10000,
+  maxiter = 1000,
   blocks = NULL,
   keep = NULL,
   remove = NULL,

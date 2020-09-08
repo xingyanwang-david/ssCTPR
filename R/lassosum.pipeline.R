@@ -309,7 +309,7 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
         lassosum_ct(cor=cor2, bfile=ref.bfile, 
                     shrink=s, extract=ref.extract, lambda=lambda, lambda_ct=lambda_ct,
                     blocks = LDblocks, trace=trace-1, 
-                    keep=parsed.ref$keep, cluster=cluster)
+                    keep=parsed.ref$keep, cluster=cluster, ...)
     })
   }
   
@@ -378,7 +378,7 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
       }
     } else {
       sd <- sd.bfile(bfile = test.bfile, extract=m.test$ref.extract,  
-                     keep=parsed.test$keep, trace = 1)
+                     keep=parsed.test$keep, trace = 1, ...)
     }
     
     if(trace) cat("De-standardize lassosum coefficients ...\n")
