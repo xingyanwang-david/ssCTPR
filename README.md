@@ -2,7 +2,7 @@
 
 ## Description
 
-ssCTPR is a Polygenic Risk Score (PRS) method based on elastic net regression with an additional cross-trait panelty, using summary statistics from trait of interest and trait(s) that are genetically correlated with the trait of interest, and accounting for Linkage Disequilibrium (LD) by a reference panel from target population.
+ssCTPR is a Polygenic Risk Score (PRS) method based on elastic net regression with an additional cross-trait penalty, using summary statistics from trait of interest and trait(s) that are genetically correlated with the trait of interest while accounting for Linkage Disequilibrium (LD) via a reference panel from the target population.
 
 ## Installation
 
