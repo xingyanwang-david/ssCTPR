@@ -1,15 +1,14 @@
-#' @title Function to validate output from lassosum.pipeline with external phenotype
-#' @param ls.pipeline A lassosum.pipeline object
+#' @title Function to validate output from ssCTPR.pipeline with external phenotype
+#' @param ls.pipeline A ssCTPR.pipeline object
 #' @param test.bfile The (\href{https://www.cog-genomics.org/plink2/formats#bed}{PLINK bfile} for the test dataset 
-#' @param keep Participants to keep (see \code{\link{lassosum_ct}} for more details)
+#' @param keep Participants to keep (see \code{\link{ssCTPR}} for more details)
 #' @param remove Participants to remove
 #' @param pheno A vector of phenotype OR a \code{data.frame} with 3 columns, the first 2 columns being headed "FID" and "IID", OR a filename for such a data.frame
 #' @param covar A matrix of covariates OR a \code{data.frame} with 3 or more columns, the first 2 columns being headed "FID" and "IID", OR a filename for such a data.frame
 #' @param validate.function Function with which to perform validation
 #' @param trace Controls amount of output
-#' @param destandardize Should coefficients from \code{\link{lassosum_ct}} be 
+#' @param destandardize Should coefficients from \code{\link{ssCTPR}} be 
 #' destandardized using test dataset standard deviations before being returned?
-#' @param plot Should the validation plot be plotted? 
 #' @param exclude.ambiguous Should ambiguous SNPs (C/G, A/T) be excluded? 
 #' @param cluster A \code{cluster} object from the \code{parallel} package for parallel computing
 #' @param rematch Forces a rematching of the ls.pipline beta's with the new .bim file
@@ -20,19 +19,19 @@
 #' dataset \href{https://www.cog-genomics.org/plink2/formats#fam}{.fam}\code{.fam} file is used. 
 #' @rdname validate
 #' @export
-validate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL, 
+validate.ssCTPR.pipeline <- function(ls.pipeline, test.bfile=NULL, 
                               keep=NULL, remove=NULL, 
                               pheno=NULL, covar=NULL, 
                               validate.function=function(x, y) 
                                 cor(x, y, use="complete"),
                               trace=1, 
-                              destandardize=F, plot=F, 
+                              destandardize=F,
                               exclude.ambiguous=T, 
                               cluster=NULL, 
                               rematch=!is.null(test.bfile), ...) {
   
 
-  stopifnot(class(ls.pipeline) == "lassosum.pipeline")
+  stopifnot(class(ls.pipeline) == "ssCTPR.pipeline")
   cat("YINGXI: line36\n")
   lambda_cts <- as.numeric(names(ls.pipeline$beta))
   results <- list(lambda=ls.pipeline$lambda, s=ls.pipeline$s, lambda_ctp=lambda_cts)
@@ -74,7 +73,7 @@ validate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
   }
 
   if(rematch) {
-    if(trace) cat("Coordinating lassosum output with test data...\n")
+    if(trace) cat("Coordinating ssCTPR output with test data...\n")
     
     if(length(test.bfile) > 1) stop("Multiple 'test.bfile's not supported here.")
     bim <- fread(paste0(test.bfile, ".bim"))
@@ -232,8 +231,7 @@ validate.lassosum.pipeline <- function(ls.pipeline, test.bfile=NULL,
                              pheno=pheno, 
                              best.validation.result=max(max_cor), 
                              results.table=results.table))
-  class(results) <- "validate.lassosum"
-  #if(plot) plot(results)
+  class(results) <- "validate.ssCTPR"
   return(results)
 
 }

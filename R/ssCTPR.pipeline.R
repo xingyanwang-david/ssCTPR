@@ -1,10 +1,10 @@
-lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL, 
+ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL, 
                               A1=NULL, A2=NULL, 
                               ref.bfile=NULL, test.bfile=NULL, 
                               LDblocks=NULL, 
                               lambda=exp(seq(log(0.001), log(0.1), length.out=20)),
                               s=c(0.2, 0.5, 0.9, 1), 
-                              lambda_ct=c(0, 0.06109, 0.13920, 0.24257, 0.38582, 0.59756, 0.94230, 1.60280, 3.37931, 8.5, 15.5, 24.5),
+                              lambda_ct=c(0, 0.06109, 0.13920, 0.24257),
                               destandardize=F, 
                               trace=1, 
                               exclude.ambiguous=TRUE, 
@@ -15,8 +15,8 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
                               max.ref.bfile.n=20000, 
                               nomatch=FALSE, 
                               ...) {
-  #' @title Run lassosum with standard pipeline
-  #' @description The easy way to run lassosum 
+  #' @title Run ssCTPR with standard pipeline
+  #' @description The easy way to run ssCTPR 
   #' @param cor A matrix of SNP-wise correlations with phenotype
   #'            derived from summary statistics
   #' @param traits The number of traits
@@ -31,10 +31,10 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   #' "EUR.hg38", "AFR.hg38", "ASN.hg38", to use blocks defined by Berisa and Pickrell (2015)
   #' based on the 1000 Genome data, or (2) a vector to define LD blocks, 
   #' or (3) a data.frame of regions in \href{https://www.ensembl.org/info/website/upload/bed.html}{bed format}
-  #' @param lambda to pass on to \code{\link{lassosum_ct}}
+  #' @param lambda to pass on to \code{\link{ssCTPR}}
   #' @param s A vector of s
-  #' @param lambda_ct to pass on to \code{\link{lassosum_ct}}
-  #' @param destandardize Should coefficients from \code{\link{lassosum_ct}} be 
+  #' @param lambda_ct to pass on to \code{\link{ssCTPR}}
+  #' @param destandardize Should coefficients from \code{\link{ssCTPR}} be 
   #' destandardized using test dataset standard deviations before being returned?
   #' @param trace Controls the amount of output.
   #' @param exclude.ambiguous Should ambiguous SNPs (C/G, A/T) be excluded? 
@@ -45,37 +45,37 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   #' @param remove.test Participants to remove from the testing dataset (see \code{\link{parseselect}})
   #' @param cluster A \code{cluster} object from the \code{parallel} package for parallel computing
   #' @param max.ref.bfile.n The maximum sample size allowed in the reference panel
-  #' @param ... parameters to pass to \code{\link{lassosum_ct}}
+  #' @param ... parameters to pass to \code{\link{ssCTPR}}
   #' 
-  #' @details To run \bold{lassosum} we assume as a minimum you have a vector of summary 
+  #' @details To run \bold{ssCTPR} we assume as a minimum you have a vector of summary 
   #' statistics in terms of SNP-wise correlations (\code{cor}) and their positions (\code{chr}, 
   #' \code{pos}), one of \code{A1} or \code{A2}, and a reference panel, specified 
   #' either in \code{ref.bfile} or \code{test.bfile}. If only \code{test.bfile} is specified, 
   #' we assume \code{test.bfile} is also the \code{ref.bfile}.  
-  #' If only \code{ref.bfile} is specified, only lassosum coefficients are returned, 
+  #' If only \code{ref.bfile} is specified, only ssCTPR coefficients are returned, 
   #' and polygenic scores are not calculated.
   #' 
   #' If SNPwise correlations are not available, they can be converted from 
-  #' p-values using the function \code{\link{p2cor_ct}}. 
+  #' p-values using the function \code{\link{p2cor}}. 
   #' 
-  #' \code{lassosum.pipeline} only uses those SNPs that are consistently defined
+  #' \code{ssCTPR.pipeline} only uses those SNPs that are consistently defined
   #' by \code{chr}, \code{pos}, \code{A1} and \code{A2} and the 
   #' \href{https://www.cog-genomics.org/plink2/formats#bim}{PLINK .bim} files
   #' specified with \code{ref.bfile} and \code{test.bfile} for estimation. 
   #' \code{\link{matchpos}} is used to achieve this, which allows for 
   #' flipping of SNP alleles in their definitions. The \code{beta} matrix in the output contains
   #' all SNPs that are common to the summary statistics and \code{test.bfile}. 
-  #' However, \bold{lassosum} with \code{s} < 1 is only run on SNPs that are 
+  #' However, \bold{ssCTPR} with \code{s} < 1 is only run on SNPs that are 
   #' common to all of \code{ref.bfile}, \code{test.bfile} and the 
-  #' summary statistics. \bold{The lassosum coefficients for \code{s} < 1 are imputed with 
-  #' results from \code{lassosum} with s = 1 (soft-thresholding) 
+  #' summary statistics. \bold{The ssCTPR coefficients for \code{s} < 1 are imputed with 
+  #' results from \code{ssCTPR} with s = 1 (soft-thresholding) 
   #' run on SNPs that are common to \code{test.bfile} and the summary stats 
   #' but not to \code{ref.bfile}.} To select only SNPs that are common to all 
   #' three datasets, one can use the \code{also.in.refpanel} logical vector in the
   #' output. 
   #' 
   #' For \code{keep.ref}, \code{remove.ref}, \code{keep.test}, and \code{remove.test}, 
-  #' see the documentation for \code{keep} and \code{remove} in \code{\link{lassosum_ct}} 
+  #' see the documentation for \code{keep} and \code{remove} in \code{\link{ssCTPR}} 
   #' for details. 
   #' @export
   #' 
@@ -147,7 +147,7 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
       if(LDblocks %in% possible.LDblocks) {
         LDblocks <- read.table2(system.file(paste0("data/Berisa.", 
                                                    LDblocks, ".bed"), 
-                                            package="lassosum"), header=T)
+                                            package="ssCTPR"), header=T)
       } else {
         stop(paste("I cannot recognize this LDblock. Specify one of", 
                    paste(possible.LDblocks, collapse=", ")))
@@ -268,7 +268,7 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
     ### Positions of reference dataset that are common to summary statistics and test dataset ###
     ref.extract <- rep(FALSE, nrow(ref.bim))
     ref.extract[m.ref$ref.extract][m.common$order] <- TRUE
-  } else {   # For use in cp.lassosum only!!!
+  } else {   # For use in cp.ssCTPR only!!!
     ss2 <- ss
     stopifnot(parsed.ref$p == nrow(ss))
     stopifnot(parsed.test$p == nrow(ss))
@@ -299,14 +299,14 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   ### Number of different s values to try ###
   s.minus.1 <- s[s != 1]
   
-  ### Get beta estimates from lassosum ###
+  ### Get beta estimates from ssCTPR ###
   cor2 <- ss2[sort(m.common$order),5:ncol(ss2)]
   ls <- list()
   if(length(s.minus.1) > 0) {
-    if(trace) cat("Running lassosum ...\n")
+    if(trace) cat("Running ssCTPR ...\n")
     ls <- lapply(s.minus.1, function(s) {
       if(trace) cat("s = ", s, "\n")
-        lassosum_ct(cor=cor2, bfile=ref.bfile, 
+        ssCTPR(cor=cor2, bfile=ref.bfile, 
                     shrink=s, extract=ref.extract, lambda=lambda, lambda_ct=lambda_ct,
                     blocks = LDblocks, trace=trace-1, 
                     keep=parsed.ref$keep, cluster=cluster, ...)
@@ -323,11 +323,11 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   ss3$order <- m.test$order
   
   if(any(s == 1)) {
-    if(trace) cat("Running lassosum with s=1...\n")
-    il <- indeplasso_ct(ss3[,5:(ncol(ss3)-1)], lambda=lambda, lambda_ct = lambda_ct, trace = trace)
+    if(trace) cat("Running ssCTPR with s=1...\n")
+    il <- indepssCTPR(ss3[,5:(ncol(ss3)-1)], lambda=lambda, lambda_ct = lambda_ct, trace = trace)
   } else {
     il <- list(beta=matrix(0, nrow=length(m.test$order), ncol=length(lambda)))
-  } ## else need modify??
+  } ## else need modify? yingxi
 
   ### Impute indeplasso estimates to SNPs not in reference panel ###
   if(trace && any(m.test$ref.extract & !m.common$ref.extract)) 
@@ -355,7 +355,7 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
     if(trace) cat("Obtain standard deviations ...\n")
     sd <- rep(NA, sum(m.test$ref.extract))
     if(length(s.minus.1) > 0 && ref.equal.test) {
-      # Don't want to re-compute if they're already computed in lassosum. 
+      # Don't want to re-compute if they're already computed in ssCTPR. 
       sd[in.refpanel] <- ls[[1]][[1]]$sd[re.order]
       xcl.test <- !in.refpanel
       stopifnot(all(is.na(sd[xcl.test])))
@@ -374,14 +374,14 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
         sd <- sd.bfile(bfile = test.bfile, extract=m.test$ref.extract,  
                                keep=parsed.test$keep, cluster=cluster, ...)
       } else {
-        # sd should already be calculated at lassosum
+        # sd should already be calculated at ssCTPR
       }
     } else {
       sd <- sd.bfile(bfile = test.bfile, extract=m.test$ref.extract,  
                      keep=parsed.test$keep, trace = 1, ...)
     }
     
-    if(trace) cat("De-standardize lassosum coefficients ...\n")
+    if(trace) cat("De-standardize ssCTPR coefficients ...\n")
     ### regression coefficients = correlation coefficients / sd(X) * sd(y) ###
     sd[sd <= 0] <- Inf # Do not want infinite beta's!
     # if(traits>1){
@@ -404,24 +404,24 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
                   LDblocks=LDblocks, 
                   destandardized=destandardize, 
                   exclude.ambiguous=exclude.ambiguous)
-  #' @return A \code{lassosum.pipeline} object with the following elements
-  #' \item{beta}{A list of lassosum coefficients: one list element for each \code{s}}
+  #' @return A \code{ssCTPR.pipeline} object with the following elements
+  #' \item{beta}{A list of ssCTPR coefficients: one list element for each \code{s}}
   #' \item{test.extract}{A logical vector for the SNPs in \code{test.bfile} that are used in estimation.}
-  #' \item{also.in.refpanel}{A logical vector for the SNPs in \code{test.bfile} that are used in \code{lassosum}.}
+  #' \item{also.in.refpanel}{A logical vector for the SNPs in \code{test.bfile} that are used in \code{ssCTPR}.}
   #' \item{sumstats}{A \code{data.frame} of summary statistics used in estimation.}
   #' \item{sd}{The standard deviation for the testing dataset}
   #' \item{test.bfile}{The testing dataset}
   #' \item{keep.test}{Sample to keep in the testing dataset}
   #' \item{ref.bfile}{The reference panel dataset}
   #' \item{keep.ref}{Sample to keep in the reference panel dataset}
-  #' \item{lambda, s, keep.test, destandardized}{Information to pass on to \code{\link{validate.lassosum.pipeline}} or \code{\link{pseudovalidate.lassosum.pipeline}}}
+  #' \item{lambda, s, keep.test, destandardized}{Information to pass on to \code{\link{validate.ssCTPR.pipeline}}}
   #' \item{pgs}{A matrix of polygenic scores}
   #' \item{destandardized}{Are the coefficients destandardized?}
   #' \item{exclude.ambiguous}{Were ambiguous SNPs excluded?}
   #' 
   
   if(notest) {
-    class(results) <- "lassosum.pipeline"
+    class(results) <- "ssCTPR.pipeline"
     return(results) 
   }
   
@@ -445,7 +445,7 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   results <- c(results, list(pgs=pgs))
   results$time <- (proc.time() - time.start)["elapsed"]
   results$traits <- traits
-  class(results) <- "lassosum.pipeline"
+  class(results) <- "ssCTPR.pipeline"
   return(results) 
  
   #' @examples 
@@ -455,10 +455,12 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   #'  head(ss)
   #'  
   #'  ### Convert p-values to correlations, assuming a sample size of 60000 for the p-values ###
-  #'  cor <- p2cor(p = ss$P_val, n = 60000, sign=log(ss$OR_A1))
+  #'  cor <- p2cor(p = ss$P_val.Y1, n = 60000, sign=ss$BETA.Y1))
+  #'  cor <- cbind(cor,ss$BETA.Y2)  # summary statistics of secondary traits
   #'  
-  #'  ### Run lassosum using standard pipeline ### 
-  #'  out <- lassosum.pipeline(cor=cor, chr=ss$Chr, pos=ss$Position, 
+  #'  ### Run ssCTPR using standard pipeline ### 
+  #'  out <- ssCTPR.pipeline(cor=cor, traits=ncol(cor), lambda_ct = lambda_ct, 
+  #'                           chr=ss$Chr, pos=ss$Position, 
   #'                           A1=ss$A1, A2=ss$A2,
   #'                           ref.bfile=ref.bfile, test.bfile=test.bfile, 
   #'                           LDblocks = "EUR.hg19")
@@ -466,5 +468,4 @@ lassosum.pipeline_ct <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   #' @note Berisa, T. & Pickrell, J. K. 
   #' Approximately independent linkage disequilibrium blocks in human populations. 
   #' Bioinformatics 32, 283-285 (2015).
-
 }

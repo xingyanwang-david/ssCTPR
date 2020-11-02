@@ -1,12 +1,12 @@
-merge.lassosum <- function(...) {
+merge.ssCTPR <- function(...) {
   
-  #' @title Merge lassosum results 
+  #' @title Merge ssCTPR results 
   #' @description e.g. when calculated over different blocks/chromosomes
-  #' @method merge lassosum
+  #' @method merge ssCTPR
   #' @export
   #' 
   ll <- list(...)
-  stopifnot(all(sapply(ll, "class") == "lassosum"))
+  stopifnot(all(sapply(ll, "class") == "ssCTPR"))
   for (ii in 1:length(ll)) {
     stopifnot(all(sapply(ll[[ii]], function(x) all(x$lambda == ll[[1]][[1]]$lambda))))
     shrink <- sapply(ll[[ii]], function(x) x$shrink)
@@ -33,6 +33,6 @@ merge.lassosum <- function(...) {
     results[[as.character(ii)]]$nparams <- do.call("Cumsum", lapply(ll, function(x) x[[ii]]$nparams))
   }
   names(results) <- names(ll[[1]])
-  class(results) <- "lassosum"
+  class(results) <- "ssCTPR"
   return(results)
 }

@@ -1,15 +1,15 @@
-#' @title Function to obtain LASSO estimates of a regression problem given summary statistics
-#' and a reference panel
+#' @title Function to obtain beta estimates of a regression problem given summary statistics
+#' from one or more traits and a reference panel
 #' 
 #' @details A function to find the minimum of \eqn{\beta} in  
-#' \deqn{f(\beta)=\beta'R\beta - 2\beta'r + 2\lambda||\beta||_1}
+#' \deqn{f(\beta)=\beta'R\beta - 2\beta'r + 2\lambda||\beta||_1 + \lambda_{ct}||\beta-s_{t}||^{2}}
 #' where 
 #' \deqn{R=(1-s)X'X/n + sI}
 #' is a shrunken correlation matrix, with \eqn{X} being standardized reference panel.
-#' \eqn{s} should take values in (0,1]. \eqn{r} is a vector of correlations. 
+#' \eqn{s} should take values in (0,1]. \eqn{r} is a vector of correlations. \eqn{s_{t}} is a vector of summary statistics from secondary traits, if any.
 #' \code{keep}, \code{remove} could take one of three 
-#' formats: (1) A logical vector indicating which indivduals to keep/remove, 
-#' (2) A \code{data.frame} with two columns giving the FID and IID of the indivdiuals
+#' formats: (1) A logical vector indicating which individuals to keep/remove, 
+#' (2) A \code{data.frame} with two columns giving the FID and IID of the individuals
 #' to keep/remove (matching those in the .fam file), or (3) a character scalar giving the text file with the FID/IID. 
 #' Likewise \code{extract}, \code{exclude} can also take one of the three formats,
 #' except with the role of the FID/IID data.frame replaced with a character vector of 
@@ -40,11 +40,11 @@
 #' 
 #' @export
 
-lassosum_ct <- function(cor, bfile, 
+ssCTPR <- function(cor, bfile, 
                      lambda=exp(seq(log(0.001), log(0.1), length.out=20)), 
                      shrink=0.9, 
-                     lambda_ct=c(0, 0.06109, 0.13920, 0.24257, 0.38582, 0.59756, 0.94230, 1.60280, 3.37931, 8.5, 15.5, 24.5),
-                     thr=1e-4, init=NULL, trace=0, maxiter=1000, 
+                     lambda_ct=c(0, 0.06109, 0.13920, 0.24257),
+                     thr=1e-4, init=NULL, trace=0, maxiter=3000, 
                      blocks=NULL,
                      keep=NULL, remove=NULL, extract=NULL, exclude=NULL, 
                      chr=NULL, 
@@ -75,7 +75,7 @@ lassosum_ct <- function(cor, bfile,
   chunks <- group.blocks(Blocks, parsed, mem.limit, chunks, cluster)
   if(trace > 0) {
     if(trace - floor(trace) > 0) {
-      cat("Doing lassosum on chunk", unique(chunks$chunks), "\n")
+      cat("Doing ssCTPR on chunk", unique(chunks$chunks), "\n")
     } else {
       cat("Calculations carried out in ", max(chunks$chunks.blocks), " chunks\n")
     }
@@ -83,7 +83,7 @@ lassosum_ct <- function(cor, bfile,
   if(length(unique(chunks$chunks.blocks)) > 1) {
     if(is.null(cluster)) {
       results.list <- lapply(unique(chunks$chunks.blocks), function(i) {
-        lassosum_ct(cor=cor[chunks$chunks==i,], bfile=bfile, lambda=lambda, shrink=shrink, lambda_ct=lambda_ct,
+        ssCTPR(cor=cor[chunks$chunks==i,], bfile=bfile, lambda=lambda, shrink=shrink, lambda_ct=lambda_ct,
                  thr=thr, init=init[chunks$chunks==i], trace=trace, maxiter=maxiter, 
                  blocks[chunks$chunks==i], keep=parsed$keep, extract=chunks$extracts[[i]], 
                  mem.limit=mem.limit, chunks=chunks$chunks[chunks$chunks==i])
@@ -95,7 +95,7 @@ lassosum_ct <- function(cor, bfile,
       # Make sure these are defined within the function and so copied to 
       # the child processes
       results.list <- parallel::parLapplyLB(cluster, unique(chunks$chunks.blocks), function(i) {
-        lassosum_ct(cor=Cor[chunks$chunks==i,], bfile=Bfile, lambda=Lambda, lambda_ct=Lambda_ct,
+        ssCTPR(cor=Cor[chunks$chunks==i,], bfile=Bfile, lambda=Lambda, lambda_ct=Lambda_ct,
                  shrink=Shrink, thr=Thr, init=Init[chunks$chunks==i], 
                  trace=trace-0.5, maxiter=Maxiter, 
                  blocks=Blocks[chunks$chunks==i], 
@@ -103,7 +103,7 @@ lassosum_ct <- function(cor, bfile,
                  mem.limit=Mem.limit, chunks=chunks$chunks[chunks$chunks==i])
       })
     }
-    return(do.call("merge.lassosum", results.list))
+    return(do.call("merge.ssCTPR", results.list))
   }
 
   #### Group blocks into chunks 
@@ -137,7 +137,7 @@ lassosum_ct <- function(cor, bfile,
   order <- order(lambda, decreasing = T)
 
   if(length(lambda_ct) >= 1) {
-    if(trace) cat("Running lassosum ...\n")
+    if(trace) cat("Running ssCTPR ...\n")
     results <- lapply(lambda_ct, function(ct) {
       if(trace) cat("lambda_ct = ", ct, "\n")
       runElnet(lambda[order], shrink, ct, fileName=paste0(bfile,".bed"), 
@@ -179,7 +179,7 @@ lassosum_ct <- function(cor, bfile,
     results[[jj]]$lambda <- as.vector(results[[jj]]$lambda)
   }
   
-  class(results) <- "lassosum"
+  class(results) <- "ssCTPR"
   return(results)
   #' @return A list with the following
   #' \item{lambda}{same as the lambda input}
@@ -190,7 +190,6 @@ lassosum_ct <- function(cor, bfile,
   #' \item{fbeta}{\eqn{=\beta'R\beta - 2\beta'r + 2\lambda||\beta||_1}}
   #' \item{sd}{The standard deviation of the reference panel SNPs}
   #' \item{shrink}{same as input}
+  #' \item{lambda_ct}{same as input}
   #' \item{nparams}{Number of non-zero coefficients}
-  
-  
 }

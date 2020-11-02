@@ -14,8 +14,6 @@ p2cor(p, n, sign = rep(1, length(p)), min.n = max(n, 30)/10)
 \item{sign}{A matrix giving the sign of the correlations (e.g. the log odds ratios)}
 
 \item{min.n}{The minimum sample size to be considered a valid p-value}
-
-\item{traits}{The number of traits}
 }
 \value{
 A matrix of correlations

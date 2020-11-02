@@ -1,7 +1,6 @@
 #' @title Function to convert p-values to correlation via the t-statistic
 #' @param p Matrix of p-values
 #' @param n Sample size
-#' @param traits The number of traits
 #' @param sign A matrix giving the sign of the correlations (e.g. the log odds ratios)
 #' @param min.n The minimum sample size to be considered a valid p-value
 #' @return A matrix of correlations

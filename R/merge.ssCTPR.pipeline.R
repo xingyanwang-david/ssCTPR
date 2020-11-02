@@ -1,6 +1,6 @@
-merge.lassosum.pipeline <- function(...) {
-  #' Merge a list of lassosum.pipeline objects
-  #' @param ... \code{lassosum.pipeline} objects, separated by commas
+merge.ssCTPR.pipeline <- function(...) {
+  #' Merge a list of ssCTPR.pipeline objects
+  #' @param ... \code{ssCTPR.pipeline} objects, separated by commas
   #' @export
   
   l <- list(...)
@@ -58,7 +58,7 @@ merge.lassosum.pipeline <- function(...) {
   # split.vec <- sapply(l, function(x) nrow(x$beta[[1]]))
   # lpipe$beta.split <- rep(1:length(l), split.vec)
   # lpipe$split <- function(obj, vec) {
-  #   # obj should be either lassosum.pipeline or cp.lassosum
+  #   # obj should be either ssCTPR.pipeline or cp.ssCTPR
   #   s <- obj$beta.split
   #   return(lapply(1:max(s), function(i) vec[s==i]))
   # }
@@ -69,8 +69,8 @@ merge.lassosum.pipeline <- function(...) {
     attr(lpipe$test.bfile, "P") <- sapply(l, function(x) length(x$test.extract))
   }
   
-  class(lpipe) <- "lassosum.pipeline"
+  class(lpipe) <- "ssCTPR.pipeline"
   return(lpipe)
-  #' @return A \code{lassosum.pipeline} object 
+  #' @return A \code{ssCTPR.pipeline} object 
   
 }

@@ -1,14 +1,13 @@
 /**
- lassosum
+ ssCTPR
  functions.cpp
- Purpose: functions to perform lassosum
+ Purpose: functions to perform ssCTPR
  
- @author Timothy Mak
- @author Robert Porsch
+ @author Yingxi Yang
  
- @version 0.1
+ Reference: Mak et al (2017) Polygenic scores via penalized regression on summary statistics. Genetic Epidemiology 41(6) 469-480.
  
- */
+*/
 // [[Rcpp::interfaces(r, cpp)]]
 
 #include <stdio.h>
@@ -423,7 +422,7 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
   
   double dlx_cur, dlx_pre,del,t,xj,ctp;
   int j,i;
-
+  
   arma::vec Lambda2(p); 
   Lambda2.fill(lambda2);
   arma::vec Lambda_ct(p); 
@@ -440,39 +439,39 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
   for(int k=0;k<maxiter ;k++) {
     dlx_cur=0.0;
     for(j=0; j < p; j++) {
-        del=0.0;
-        xj=x(j);
-        x(j)=0.0;
-        t= diag(j) * xj + r(j,0) - arma::dot(X.col(j), yhat);
-        // Think of it as r(j) - (dotproduct(X.col(j), yhat) - diag(j)*xj)
-        ctp=0.0;
-        for(int tt=1;tt<traits;tt++){
-            ctp+=r(j,tt);
+      del=0.0;
+      xj=x(j);
+      x(j)=0.0;
+      t= diag(j) * xj + r(j,0) - arma::dot(X.col(j), yhat);
+      // Think of it as r(j) - (dotproduct(X.col(j), yhat) - diag(j)*xj)
+      ctp=0.0;
+      for(int tt=1;tt<traits;tt++){
+        ctp+=r(j,tt);
+      }
+      ctp*=lambda_ct;
+      // if(lambda_ct==0){
+      //   ctp=0;  //make sure the cross-trait penalty is 0
+      // }
+      // Rcout << "ctp:" << ctp <<std::endl;
+      if(std::abs(t+ctp)-lambda1 > 0.0){
+        if(t+ctp-lambda1 > 0.0){
+          x(j)=t-lambda1+ctp/denom(j);
+        } else{
+          x(j)=t+lambda1+ctp/denom(j);
         }
-        ctp*=lambda_ct;
-        // if(lambda_ct==0){
-        //   ctp=0;  //make sure the cross-trait penalty is 0
-        // }
-       // Rcout << "ctp:" << ctp <<std::endl;
-        if(std::abs(t+ctp)-lambda1 > 0.0){
-          if(t+ctp-lambda1 > 0.0){
-            x(j)=t-lambda1+ctp/denom(j);
-          } else{
-            x(j)=t+lambda1+ctp/denom(j);
-          }
-        }
-        //Rcout << "coefficient of variants " << j << ": " << x(j) << "\n";
-        // abs(t)-lambda1 > 0 => (t > 0 && t > lambda1) || (t < 0 && t < -lambda1)
-        // In either case, there's shrinkage, but not to zero
-        // If (t > 0 && t < lambda1) || (t < 0 && t > -lambda1), 0 is the minimum
-        if(x(j)==xj) continue;
-        del=x(j)-xj;   // x(j) is new, xj is old
-        //dlx=std::max(dlx,std::abs(del));
-        // if(j==1 || j==100 || j==200){
-        //   Rcout << "del:" << del <<std::endl;
-        // }
-        yhat += del*X.col(j);
-        dlx_cur=std::max(dlx_cur,std::abs(del)); 
+      }
+      //Rcout << "coefficient of variants " << j << ": " << x(j) << "\n";
+      // abs(t)-lambda1 > 0 => (t > 0 && t > lambda1) || (t < 0 && t < -lambda1)
+      // In either case, there's shrinkage, but not to zero
+      // If (t > 0 && t < lambda1) || (t < 0 && t > -lambda1), 0 is the minimum
+      if(x(j)==xj) continue;
+      del=x(j)-xj;   // x(j) is new, xj is old
+      //dlx=std::max(dlx,std::abs(del));
+      // if(j==1 || j==100 || j==200){
+      //   Rcout << "del:" << del <<std::endl;
+      // }
+      yhat += del*X.col(j);
+      dlx_cur=std::max(dlx_cur,std::abs(del)); 
     } 
     if(std::abs(dlx_cur-dlx_pre)<1e-6){
       count++;

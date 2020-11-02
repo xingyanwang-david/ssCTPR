@@ -1,19 +1,20 @@
-#' @title Subset a lassosum.pipeline object by lambda and s
+#' @title Subset a ssCTPR.pipeline object by lambda, s and lambda_ct
 #'
-#' @param lassosum.pipeline An object returned by lassosum.pipeline
+#' @param ssCTPR.pipeline An object returned by ssCTPR.pipeline
 #' @param s Value(s) of s to restrict to 
 #' @param lambda Value(s) of lambda to restrict to 
+#' @param lambda_ct Values(s) of lambda_ct to restrict to
 #' @details This function is usually used to reapply a validated pgs to a new data.set. 
 #' See example below. 
 #' 
-#' @rdname subset.lassosum.pipeline
+#' @rdname subset.ssCTPR.pipeline
 #' @export
-subset.lassosum.pipeline <- function(lassosum.pipeline, s=NULL, lambda=NULL, lambda_ct=NULL) {
+subset.ssCTPR.pipeline <- function(ssCTPR.pipeline, s=NULL, lambda=NULL, lambda_ct=NULL) {
   
   err <- function(param, value) {
-    stop(paste("There is no", param, "equalling", value, "in lassosum.pipeline"))
+    stop(paste("There is no", param, "equalling", value, "in ssCTPR.pipeline"))
   }
-  lp <- lassosum.pipeline
+  lp <- ssCTPR.pipeline
   
   
   if(!is.null(lambda_ct)) {
@@ -46,19 +47,20 @@ subset.lassosum.pipeline <- function(lassosum.pipeline, s=NULL, lambda=NULL, lam
     }
   }
 
-  #' @return A lassosum.pipeline object
-  class(lp) <- "lassosum.pipeline"
+  #' @return A ssCTPR.pipeline object
+  class(lp) <- "ssCTPR.pipeline"
   return(lp)
   
   #' @examples 
   #' \dontrun{
-  #'  ### Run lassosum using standard pipeline ### 
-  #'  lp <- lassosum.pipeline(cor=cor, chr=ss$Chr, pos=ss$Position, 
+  #'  ### Run ssCTPR using standard pipeline ### 
+  #'  lp <- ssCTPR.pipeline(cor=cor, traits=ncol(cor), lambda_ct = lambda_ct,
+  #'                           chr=ss$Chr, pos=ss$Position, 
   #'                           A1=ss$A1, A2=ss$A2,
   #'                           ref.bfile=ref.bfile, test.bfile=test.bfile, 
   #'                           LDblocks = ld)
   #'  v <- validate(lp)
-  #'  lp2 <- subset(lp, s=v$best.s, lambda=v$best.lambda)
+  #'  lp2 <- subset(lp, s=v$best.s, lambda=v$best.lambda, lambda_ct=v$best.lambda_ct)
   #'  v2 <- validate(lp2)
   #' }
 }

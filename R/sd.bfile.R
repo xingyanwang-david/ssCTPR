@@ -42,7 +42,7 @@ sd.bfile <- function(bfile, keep=NULL, remove=NULL, extract=NULL, exclude=NULL,
   parsed <- parseselect(bfile, extract=extract, exclude = exclude, 
                         keep=keep, remove=remove, 
                         chr=chr)
-  return(lassosum_ct(cor = rep(0.0, parsed$p), bfile = bfile, lambda=numeric(0), lambda_ct=0,
+  return(ssCTPR(cor = rep(0.0, parsed$p), bfile = bfile, lambda=numeric(0), lambda_ct=0,
                   shrink=1, keep=parsed$keep, extract=parsed$extract, 
                   blocks=1:parsed$p, ...)$sd)
 }

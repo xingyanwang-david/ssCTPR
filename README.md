@@ -2,7 +2,7 @@
 
 ## Description
 
-Cross-trait penalized regression using summary statistics
+ssCTPR is a polygenic risk score method based on elastic net regression with an additional cross-trait panelty, using summary statistics from trait of interest and trait(s) that are genetically correlated with the trait of interest, and accounting for Linkage Disequilibrium (LD) by a reference panel from target population.
 
 ## Installation
 

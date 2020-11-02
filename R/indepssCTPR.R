@@ -1,4 +1,4 @@
-#' @title Independent LASSO using summary statistics (a.k.a. soft-thresholding)
+#' @title Independent ssCTPR based on summary statistics (a.k.a. soft-thresholding)
 #' 
 #' @param coef vector of regression coefficients (\eqn{r})
 #' @param lambda a vector of \eqn{\lambda}s 
@@ -8,12 +8,10 @@
 #' @param trace controls the amount of output
 #' 
 #' @details A function to find the minimum of \eqn{\beta} in  
-#' \deqn{f(\beta)=\beta'\beta - 2\beta'r + 2\lambda||\beta||_1}
-#' where \eqn{r} is the vector of regression coefficients. The analytical solution
-#' is given by
-#' \deqn{\hat{\beta}=sign(r)(max(|r| - \lambda))}
+#' \deqn{f(\beta)=\beta'\beta - 2\beta'r + 2\lambda||\beta||_1 + \lambda_{ct}||\beta-\s{t}||^{2}}
+#' where \eqn{r} is the vector of regression coefficients.
 #' @export
-indeplasso_ct <- function(coef, lambda=exp(seq(log(0.001), log(0.1), length.out=20)), lambda_ct, thr=1e-4,maxiter=10000, trace=1) {
+indepssCTPR <- function(coef, lambda=exp(seq(log(0.001), log(0.1), length.out=20)), lambda_ct, thr=1e-4,maxiter=10000, trace=1) {
   coef <- as.matrix(coef)
   traits <- ncol(coef)
   p <- nrow(coef)
@@ -43,7 +41,7 @@ indeplasso_ct <- function(coef, lambda=exp(seq(log(0.001), log(0.1), length.out=
     
     ls <- list()
     if(length(lambda_ct) > 0) {
-      if(trace) cat("Running independent lassosum ...\n")
+      if(trace) cat("Running independent ssCTPR ...\n")
       ls <- lapply(lambda_ct, function(ct) {
         if(trace) cat("lambda_ct = ", ct, "\n")
         indeplasso_fixed_ctp(ct)
