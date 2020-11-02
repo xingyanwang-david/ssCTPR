@@ -268,7 +268,7 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
     ### Positions of reference dataset that are common to summary statistics and test dataset ###
     ref.extract <- rep(FALSE, nrow(ref.bim))
     ref.extract[m.ref$ref.extract][m.common$order] <- TRUE
-  } else {   # For use in cp.ssCTPR only!!!
+  } else {   # For use in cp.ssCTPR only!
     ss2 <- ss
     stopifnot(parsed.ref$p == nrow(ss))
     stopifnot(parsed.test$p == nrow(ss))
@@ -315,7 +315,7 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   
   
 
-  ### Indeplasso ###        s=1, no LD prior
+  ### indepssCTPR ###        s=1, no LD prior
   ss3 <- ss[m.test$order,]
   ss3[,5:ncol(ss3)] <- ss3[,5:ncol(ss3)] * m.test$rev
   ss3$A1 <- test.bim$V5[m.test$ref.extract]
@@ -329,9 +329,9 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
     il <- list(beta=matrix(0, nrow=length(m.test$order), ncol=length(lambda)))
   } ## else need modify? yingxi
 
-  ### Impute indeplasso estimates to SNPs not in reference panel ###
+  ### Impute indepssCTPR estimates to SNPs not in reference panel ###
   if(trace && any(m.test$ref.extract & !m.common$ref.extract)) 
-    cat("Impute indeplasso estimates to SNPs not in reference panel ...\n")
+    cat("Impute indepssCTPR estimates to SNPs not in reference panel ...\n")
   beta <- lapply(il, function(x) rep(list(x$beta), length(s)))
   for(ii in 1:length(beta)){
     names(beta[[ii]]) <- as.character(s)

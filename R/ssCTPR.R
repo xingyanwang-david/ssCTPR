@@ -1,4 +1,5 @@
-#' @title Function to obtain beta estimates of a regression problem given summary statistics
+#' @title ssCTPR
+#' @description Function to obtain beta estimates of a regression problem given summary statistics
 #' from one or more traits and a reference panel
 #' 
 #' @details A function to find the minimum of \eqn{\beta} in  

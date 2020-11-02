@@ -2,6 +2,7 @@ merge.ssCTPR <- function(...) {
   
   #' @title Merge ssCTPR results 
   #' @description e.g. when calculated over different blocks/chromosomes
+  #' @param ... \code{ssCTPR.pipeline} objects, separated by commas
   #' @method merge ssCTPR
   #' @export
   #' 

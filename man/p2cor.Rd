@@ -4,12 +4,14 @@
 \alias{p2cor}
 \title{Function to convert p-values to correlation via the t-statistic}
 \usage{
-p2cor(p, n, sign = rep(1, length(p)), min.n = max(n, 30)/10)
+p2cor(p, n, logp = FALSE, sign = rep(1, length(p)), min.n = max(n, 30)/10)
 }
 \arguments{
 \item{p}{Matrix of p-values}
 
 \item{n}{Sample size}
+
+\item{logp}{whether the input \eqn{p} is -log(p-value)}
 
 \item{sign}{A matrix giving the sign of the correlations (e.g. the log odds ratios)}
 

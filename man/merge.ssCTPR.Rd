@@ -6,6 +6,9 @@
 \usage{
 \method{merge}{ssCTPR}(...)
 }
+\arguments{
+\item{...}{\code{ssCTPR.pipeline} objects, separated by commas}
+}
 \description{
 e.g. when calculated over different blocks/chromosomes
 }

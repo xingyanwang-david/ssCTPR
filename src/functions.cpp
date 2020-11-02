@@ -7,7 +7,7 @@
  
  Reference: Mak et al (2017) Polygenic scores via penalized regression on summary statistics. Genetic Epidemiology 41(6) 469-480.
  
-*/
+ */
 // [[Rcpp::interfaces(r, cpp)]]
 
 #include <stdio.h>
@@ -391,12 +391,14 @@ arma::mat multiBed3sp(const std::string fileName, int N, int P,
 //' Performs elnet
 //'
 //' @param lambda1 lambda
-//' @param lambda2 lambda
+//' @param lambda2 shrinkage parameter s
+//' @param lambda_ct cross trait penalty
+//' @param diag diag(X'X)
 //' @param X genotype Matrix
 //' @param r correlations
-//' @param x beta coef
 //' @param thr threshold 
-//' @param yhat A vector
+//' @param x beta coef
+//' @param yhat A vector, X*x
 //' @param trace if >1 displays the current iteration
 //' @param maxiter maximal number of iterations
 //' @return conv
@@ -407,13 +409,10 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
           const arma::mat& r, double thr, arma::vec& x, arma::vec& yhat, int trace, int maxiter)
 {
   
-  // diag is basically diag(X'X)
-  // Also, ensure that the yhat=X*x in the input. Usually, both x and yhat are preset to 0. 
-  // They are modified in place in this function. 
   
-  int n=X.n_rows;
-  int p=X.n_cols;
-  int traits=r.n_cols;
+  int n=X.n_rows; // number of samples
+  int p=X.n_cols; // number of variants
+  int traits=r.n_cols; // number of traits, including the primary trait
   
   if(r.n_rows != p) stop("r.n_rows != p");
   if(x.n_elem != p) stop("x.n_elem != p");
@@ -423,15 +422,13 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
   double dlx_cur, dlx_pre,del,t,xj,ctp;
   int j,i;
   
+  // intermediate variables
   arma::vec Lambda2(p); 
   Lambda2.fill(lambda2);
   arma::vec Lambda_ct(p); 
   Lambda_ct.fill((traits-1)*lambda_ct);
-  // if(lambda_ct==0){
-  //   Lambda_ct.fill(0);
-  // }
   
-  arma::vec denom=diag + Lambda2 + Lambda_ct;
+  arma::vec denom=diag + Lambda2 + Lambda_ct; // denominator while updating beta coef
   
   int conv=0;
   int count=0;
@@ -443,16 +440,20 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
       xj=x(j);
       x(j)=0.0;
       t= diag(j) * xj + r(j,0) - arma::dot(X.col(j), yhat);
-      // Think of it as r(j) - (dotproduct(X.col(j), yhat) - diag(j)*xj)
+      // t is u(j), Eq(7) in ms
+      // u(j) = r(j,0) - (dotproduct(X.col(j), (X * x - X.col(j) * xj))
+      //      = r(j,0) - (dotproduct(X.col(j), X * x)) + (docproduct(X.col(j), X.col(j) * xj))
+      //      = r(j,0) - (dotproduct(X.col(j), yhat)) + diag(j) * xj
+      
+      
+      // cross trait penalty
       ctp=0.0;
       for(int tt=1;tt<traits;tt++){
         ctp+=r(j,tt);
       }
       ctp*=lambda_ct;
-      // if(lambda_ct==0){
-      //   ctp=0;  //make sure the cross-trait penalty is 0
-      // }
-      // Rcout << "ctp:" << ctp <<std::endl;
+      
+      // update the beta coef
       if(std::abs(t+ctp)-lambda1 > 0.0){
         if(t+ctp-lambda1 > 0.0){
           x(j)=t-lambda1+ctp/denom(j);
@@ -460,17 +461,12 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
           x(j)=t+lambda1+ctp/denom(j);
         }
       }
-      //Rcout << "coefficient of variants " << j << ": " << x(j) << "\n";
-      // abs(t)-lambda1 > 0 => (t > 0 && t > lambda1) || (t < 0 && t < -lambda1)
-      // In either case, there's shrinkage, but not to zero
-      // If (t > 0 && t < lambda1) || (t < 0 && t > -lambda1), 0 is the minimum
+      
       if(x(j)==xj) continue;
       del=x(j)-xj;   // x(j) is new, xj is old
       //dlx=std::max(dlx,std::abs(del));
-      // if(j==1 || j==100 || j==200){
-      //   Rcout << "del:" << del <<std::endl;
-      // }
-      yhat += del*X.col(j);
+      
+      yhat += del*X.col(j); // update yhat
       dlx_cur=std::max(dlx_cur,std::abs(del)); 
     } 
     if(std::abs(dlx_cur-dlx_pre)<1e-6){
@@ -480,7 +476,7 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
     }
     dlx_pre=dlx_cur;
     checkUserInterrupt();
-    if(trace > 0) Rcout << "Iteration: " << k << ": " << "dlx:" << dlx_cur << "  count:" << count << "\n";
+    //if(trace > 1) Rcout << "Iteration: " << k << ": " << "dlx:" << dlx_cur << "  count:" << count << "\n";
     
     if(dlx_cur < thr) {
       conv=1;
@@ -494,32 +490,40 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
   return conv;
 }
 
+//' performs elnet by blocks
+//'
+//' @param lambda1 lambda
+//' @param lambda2 shrinkage parameter s
+//' @param lambda_ct cross trait penalty
+//' @param diag diag(X'X)
+//' @param X genotype Matrix
+//' @param r correlations
+//' @param thr threshold 
+//' @param x beta coef
+//' @param yhat A vector, X*x
+//' @param trace if >1 displays the current iteration
+//' @param maxiter maximal number of iterations
+//' @param startvec start position for each block
+//' @param endvec end position for each block
+//' @return conv
+//' @keywords internal
+//'
 // [[Rcpp::export]]
 int repelnet(double lambda1, double lambda2, double lambda_ct, arma::vec& diag, arma::mat& X, arma::mat& r,
              double thr, arma::vec& x, arma::vec& yhat, int trace, int maxiter, 
              arma::Col<int>& startvec, arma::Col<int>& endvec)
 {
   
-  // Repeatedly call elnet by blocks...
+  // Repeatedly call elnet by blocks
   int nreps=startvec.n_elem;
   int out=1;
-  // int traits = r.n_cols;
-  // int n = X.n_rows;
   
   for(int i=0;i < startvec.n_elem; i++) {
-    // int len = endvec(i)-startvec(i)+1;
-    // arma::vec xtouse(len);
-    // arma::vec yhattouse(n);
-    // for(int ii=0; ii<traits; ii++){
-    //   xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1) = x.subvec(startvec(i)+ii*X.n_cols, endvec(i)+ii*X.n_cols);
-    //   yhattouse.subvec(n*ii,n*(ii+1)-1) = X.cols(startvec(i), endvec(i)) * xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1);
-    // }
-    //Rcout << "repelnet" << std::endl;
     
     arma::vec xtouse=x.subvec(startvec(i), endvec(i));
     arma::vec yhattouse=X.cols(startvec(i), endvec(i)) * xtouse;
     
-    //Rcout << "DEF" << std::endl;
+    //Rcout << "Yingxi: ABC" << std::endl;
     
     int out2=elnet(lambda1, lambda2, lambda_ct,
                    diag.subvec(startvec(i), endvec(i)), 
@@ -527,17 +531,12 @@ int repelnet(double lambda1, double lambda2, double lambda_ct, arma::vec& diag, 
                    r.rows(startvec(i), endvec(i)),
                    thr, xtouse, 
                    yhattouse, trace - 1, maxiter);
-    //Rcout << "GHI" << std::endl;
+    //Rcout << "Yingxi: DEF" << std::endl;
     
-    // for(int ii=0; ii<traits; ii++){
-    //   x.subvec(startvec(i)+ii*X.n_cols, endvec(i)+ii*X.n_cols) = xtouse.subvec(len_single_trait*ii,len_single_trait*(ii+1)-1);
-    // }
-    //Rcout << "JKL" << std::endl;
+    x.subvec(startvec(i), endvec(i))=xtouse; // update beta coef
+    yhat += yhattouse; 
     
-    x.subvec(startvec(i), endvec(i))=xtouse;
-    yhat += yhattouse; //?
-    
-    //Rcout << "MNO" << std::endl;
+    //Rcout << "Yingxi: GHI" << std::endl;
     
     if(trace > 0) Rcout << "Block: " << i << "\n";
     out=std::min(out, out2);
@@ -676,21 +675,23 @@ arma::vec normalize(arma::mat &genotypes)
 
 //' Runs elnet with various parameters
 //' 
-//' @param lambda1 a vector of lambdas (lambda2 is 0)
-//' @param lambda_ct a double for ctp
+//' @param lambda1 a vector of lambdas
+//' @param shrink shrinkage parameter s
+//' @param lambda_ct cross trait penalty parameter
 //' @param fileName the file name of the reference panel
-//' @param r a vector of correlations
-//' @param N number of subjects
-//' @param P number of position in reference file
-//' @param col_skip_posR which variants should we skip
-//' @param col_skipR which variants should we skip
-//' @param keepbytesR required to read the PLINK file
-//' @param keepoffsetR required to read the PLINK file
+//' @param r a matrix of SNP-wise correlation with primary trait and/or beta estimates of secondary traits
+//' @param N number of individuals in the reference panel
+//' @param P number of variants in reference file
+//' @param col_skip_pos which variants should we skip
+//' @param col_skip which variants should we skip
+//' @param keepbytes required to read the PLINK file
+//' @param keepoffset required to read the PLINK file
 //' @param thr threshold
 //' @param x a numeric vector of beta coefficients
-//' @param trace if >1 displays the current iteration
+//' @param trace if >1 verbose output
 //' @param maxiter maximal number of iterations
-//' @param Constant a constant to multiply the standardized genotype matrix
+//' @param startvec start position for each block
+//' @param endvec end position for each block
 //' @return a list of results
 //' @keywords internal
 //'  
@@ -703,15 +704,15 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
               arma::Col<int>& startvec, arma::Col<int>& endvec) {
   // a) read bed file
   // b) standardize genotype matrix
-  // c) multiply by constatant factor
-  // d) perfrom elnet
+  // c) multiply by constant factor
+  // d) perform elnet
   
   Rcout << "runElnet" << std::endl;
   int i,j;
-  int traits = r.n_cols;
+  int traits = r.n_cols; // number of traits, including the primary one
   arma::mat genotypes = genotypeMatrix(fileName, N, P, col_skip_pos, col_skip, keepbytes,
                                        keepoffset, 1);
-  //Rcout << "DEF" << std::endl;
+  //Rcout << "Yingxi: (a) in runElnet" << std::endl;
   int p = genotypes.n_cols;
   if (genotypes.n_cols != r.n_rows) {
     throw std::runtime_error("Number of positions in reference file is not "
@@ -719,30 +720,29 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
   }
   
   arma::vec sd = normalize(genotypes);
+  //Rcout << "Yingxi: (b) in runElnet" << std::endl;
   
-  genotypes *= sqrt(1.0 - shrink);
+  genotypes *= sqrt(1.0 - shrink); // \tilde{X} in ms
+  //Rcout << "Yingxi: (c) in runElnet" << std::endl;
   
   arma::Col<int> conv(lambda.n_elem);
-  int len = r.n_rows;
+  int len = r.n_rows; // number of variants
   
   arma::mat beta(len, lambda.n_elem);
   arma::mat pred(genotypes.n_rows, lambda.n_elem); pred.zeros();
   arma::vec out(lambda.n_elem);
   arma::vec loss(lambda.n_elem);
   arma::vec diag(r.n_rows); diag.fill(1.0 - shrink); 
-  // Rcout << "HIJ" << std::endl;
   
   for(j=0; j < diag.n_elem; j++) {
     if(sd(j) == 0.0) diag(j) = 0.0;
   }
-  // Rcout << "LMN" << std::endl;
   
   arma::vec fbeta(lambda.n_elem);
   arma::vec yhat(genotypes.n_rows);
   // yhat = genotypes * x;
   
-  
-  // Rcout << "Starting loop" << std::endl;
+  // Rcout << "Yingxi: Starting loop" << std::endl;
   for (i = 0; i < lambda.n_elem; ++i) {
     if (trace > 0)
       Rcout << "lambda: " << lambda(i) << "\n" << std::endl;
@@ -756,7 +756,7 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
       }
     }
     //if (out(i) != 1) {
-    //  throw std::runtime_error("Not converging.....");
+    //  Rcout << "Yingxi: Not converging..." << std::endl;
     //}
     pred.col(i) = yhat;
     loss(i) = arma::as_scalar(arma::sum(arma::pow(yhat, 2)) - 2.0 * arma::sum(x % r.col(0)));   
@@ -776,4 +776,3 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
                       Named("fbeta") = fbeta, 
                       Named("sd")= sd);
 }
-

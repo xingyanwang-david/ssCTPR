@@ -25,35 +25,39 @@ runElnet(
 )
 }
 \arguments{
-\item{lambda_ct}{a double for ctp}
+\item{shrink}{shrinkage parameter s}
+
+\item{lambda_ct}{cross trait penalty parameter}
 
 \item{fileName}{the file name of the reference panel}
 
-\item{r}{a vector of correlations}
+\item{r}{a matrix of SNP-wise correlation with primary trait and/or beta estimates of secondary traits}
 
-\item{N}{number of subjects}
+\item{N}{number of individuals in the reference panel}
 
-\item{P}{number of position in reference file}
+\item{P}{number of variants in reference file}
+
+\item{col_skip_pos}{which variants should we skip}
+
+\item{col_skip}{which variants should we skip}
+
+\item{keepbytes}{required to read the PLINK file}
+
+\item{keepoffset}{required to read the PLINK file}
 
 \item{thr}{threshold}
 
 \item{x}{a numeric vector of beta coefficients}
 
-\item{trace}{if >1 displays the current iteration}
+\item{trace}{if >1 verbose output}
 
 \item{maxiter}{maximal number of iterations}
 
-\item{lambda1}{a vector of lambdas (lambda2 is 0)}
+\item{startvec}{start position for each block}
 
-\item{col_skip_posR}{which variants should we skip}
+\item{endvec}{end position for each block}
 
-\item{col_skipR}{which variants should we skip}
-
-\item{keepbytesR}{required to read the PLINK file}
-
-\item{keepoffsetR}{required to read the PLINK file}
-
-\item{Constant}{a constant to multiply the standardized genotype matrix}
+\item{lambda1}{a vector of lambdas}
 }
 \value{
 a list of results

@@ -47,12 +47,14 @@ multiBed3sp <- function(fileName, N, P, beta, nonzeros, colpos, ncol, col_skip_p
 #' Performs elnet
 #'
 #' @param lambda1 lambda
-#' @param lambda2 lambda
+#' @param lambda2 shrinkage parameter s
+#' @param lambda_ct cross trait penalty
+#' @param diag diag(X'X)
 #' @param X genotype Matrix
 #' @param r correlations
-#' @param x beta coef
 #' @param thr threshold 
-#' @param yhat A vector
+#' @param x beta coef
+#' @param yhat A vector, X*x
 #' @param trace if >1 displays the current iteration
 #' @param maxiter maximal number of iterations
 #' @return conv
@@ -62,6 +64,24 @@ elnet <- function(lambda1, lambda2, lambda_ct, diag, X, r, thr, x, yhat, trace, 
     .Call(`_ssCTPR_elnet`, lambda1, lambda2, lambda_ct, diag, X, r, thr, x, yhat, trace, maxiter)
 }
 
+#' performs elnet by blocks
+#'
+#' @param lambda1 lambda
+#' @param lambda2 shrinkage parameter s
+#' @param lambda_ct cross trait penalty
+#' @param diag diag(X'X)
+#' @param X genotype Matrix
+#' @param r correlations
+#' @param thr threshold 
+#' @param x beta coef
+#' @param yhat A vector, X*x
+#' @param trace if >1 displays the current iteration
+#' @param maxiter maximal number of iterations
+#' @param startvec start position for each block
+#' @param endvec end position for each block
+#' @return conv
+#' @keywords internal
+#'
 repelnet <- function(lambda1, lambda2, lambda_ct, diag, X, r, thr, x, yhat, trace, maxiter, startvec, endvec) {
     .Call(`_ssCTPR_repelnet`, lambda1, lambda2, lambda_ct, diag, X, r, thr, x, yhat, trace, maxiter, startvec, endvec)
 }
@@ -94,21 +114,23 @@ normalize <- function(genotypes) {
 
 #' Runs elnet with various parameters
 #' 
-#' @param lambda1 a vector of lambdas (lambda2 is 0)
-#' @param lambda_ct a double for ctp
+#' @param lambda1 a vector of lambdas
+#' @param shrink shrinkage parameter s
+#' @param lambda_ct cross trait penalty parameter
 #' @param fileName the file name of the reference panel
-#' @param r a vector of correlations
-#' @param N number of subjects
-#' @param P number of position in reference file
-#' @param col_skip_posR which variants should we skip
-#' @param col_skipR which variants should we skip
-#' @param keepbytesR required to read the PLINK file
-#' @param keepoffsetR required to read the PLINK file
+#' @param r a matrix of SNP-wise correlation with primary trait and/or beta estimates of secondary traits
+#' @param N number of individuals in the reference panel
+#' @param P number of variants in reference file
+#' @param col_skip_pos which variants should we skip
+#' @param col_skip which variants should we skip
+#' @param keepbytes required to read the PLINK file
+#' @param keepoffset required to read the PLINK file
 #' @param thr threshold
 #' @param x a numeric vector of beta coefficients
-#' @param trace if >1 displays the current iteration
+#' @param trace if >1 verbose output
 #' @param maxiter maximal number of iterations
-#' @param Constant a constant to multiply the standardized genotype matrix
+#' @param startvec start position for each block
+#' @param endvec end position for each block
 #' @return a list of results
 #' @keywords internal
 #'  

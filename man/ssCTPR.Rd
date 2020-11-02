@@ -2,8 +2,7 @@
 % Please edit documentation in R/ssCTPR.R
 \name{ssCTPR}
 \alias{ssCTPR}
-\title{Function to obtain beta estimates of a regression problem given summary statistics
-from one or more traits and a reference panel}
+\title{ssCTPR}
 \usage{
 ssCTPR(
   cor,
