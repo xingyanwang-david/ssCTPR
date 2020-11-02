@@ -11,7 +11,6 @@ ssCTPR is a polygenic risk score method based on elastic net regression with an 
     
 ## References
 
-Wonil Chung, Jun Chen, Constance Turman, Sara Lindstrom, Zhaozhong Zhu, Po-Ru Loh, Peter Kraft and Liming Liang (2019), Efficient cross-trait penalized regression increases prediction accuracy in large cohorts using secondary phenotypes. *Nature Communications*, 10(1), 569.
+Chung, W., Chen, J., Turman, C., Lindstrom, S., Zhu, Z., Loh, P. R., . . . Liang, L. (2019). Efficient cross-trait penalized regression increases prediction accuracy in large cohorts using secondary phenotypes. *Nat Commun*, 10(1), 569. [doi:10.1038/s41467-019-08535-0](doi:10.1038/s41467-019-08535-0)
 
-Mak, TSH, Porsch, RM, Choi, SW, Zhou, X, Sham, PC. Polygenic scores via penalized regression on summary statistics. *Genet. Epidemiol*. 2017; 41: 469– 480.
-[DOI:10.1002/gepi.22050](https://doi.org/10.1002/gepi.22050).
+Mak, T. S. H., Porsch, R. M., Choi, S. W., Zhou, X., & Sham, P. C. (2017). Polygenic scores via penalized regression on summary statistics. *Genet Epidemiol*, 41(6), 469-480. [doi:10.1002/gepi.22050](https://doi.org/10.1002/gepi.22050)
