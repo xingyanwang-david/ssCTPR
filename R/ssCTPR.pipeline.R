@@ -147,7 +147,7 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
       if(LDblocks %in% possible.LDblocks) {
         LDblocks <- read.table2(system.file(paste0("data/Berisa.", 
                                                    LDblocks, ".bed"), 
-                                            package="ssCTPR"), header=T)
+                                            package="lassosum"), header=T)
       } else {
         stop(paste("I cannot recognize this LDblock. Specify one of", 
                    paste(possible.LDblocks, collapse=", ")))
