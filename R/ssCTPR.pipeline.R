@@ -17,8 +17,7 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
                               ...) {
   #' @title Run ssCTPR with standard pipeline
   #' @description The easy way to run ssCTPR 
-  #' @param cor A matrix of SNP-wise correlations with phenotype
-  #'            derived from summary statistics
+  #' @param cor A matrix of SNP-wise correlation with primary trait, derived from \code{\link{p2cor}, and beta of secondary traits if have any
   #' @param traits The number of traits
   #' @param chr Together with \code{pos}, chromosome and position for \code{cor}
   #' @param pos Together with \code{chr}, chromosome and position for \code{cor}
@@ -35,7 +34,7 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   #' @param s A vector of s
   #' @param lambda_ct to pass on to \code{\link{ssCTPR}}
   #' @param destandardize Should coefficients from \code{\link{ssCTPR}} be 
-  #' destandardized using test dataset standard deviations before being returned?
+  #' destandardized using test data standard deviations before being returned?
   #' @param trace Controls the amount of output.
   #' @param exclude.ambiguous Should ambiguous SNPs (C/G, A/T) be excluded? 
   #' @param keep.ref Participants to keep from the reference panel (see \code{\link{parseselect}})
@@ -48,7 +47,7 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   #' @param ... parameters to pass to \code{\link{ssCTPR}}
   #' 
   #' @details To run \bold{ssCTPR} we assume as a minimum you have a vector of summary 
-  #' statistics in terms of SNP-wise correlations (\code{cor}) and their positions (\code{chr}, 
+  #' statistics in terms of SNP-wise correlations of primary trait, vector(s) of effect sizes of secondary traits and their positions (\code{chr}, 
   #' \code{pos}), one of \code{A1} or \code{A2}, and a reference panel, specified 
   #' either in \code{ref.bfile} or \code{test.bfile}. If only \code{test.bfile} is specified, 
   #' we assume \code{test.bfile} is also the \code{ref.bfile}.  
@@ -315,7 +314,7 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   
   
 
-  ### indepssCTPR ###        s=1, no LD prior
+  ### indepssCTPR ###        s=1
   ss3 <- ss[m.test$order,]
   ss3[,5:ncol(ss3)] <- ss3[,5:ncol(ss3)] * m.test$rev
   ss3$A1 <- test.bim$V5[m.test$ref.extract]
@@ -327,7 +326,7 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
     il <- indepssCTPR(ss3[,5:(ncol(ss3)-1)], lambda=lambda, lambda_ct = lambda_ct, trace = trace)
   } else {
     il <- list(beta=matrix(0, nrow=length(m.test$order), ncol=length(lambda)))
-  } ## else need modify? yingxi
+  } ## ? 
 
   ### Impute indepssCTPR estimates to SNPs not in reference panel ###
   if(trace && any(m.test$ref.extract & !m.common$ref.extract)) 
@@ -384,9 +383,7 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
     if(trace) cat("De-standardize ssCTPR coefficients ...\n")
     ### regression coefficients = correlation coefficients / sd(X) * sd(y) ###
     sd[sd <= 0] <- Inf # Do not want infinite beta's!
-    # if(traits>1){
-    #   sd <- rep(sd,traits)
-    # }
+
     for(ii in 1:length(beta)){
       beta[[ii]] <- lapply(beta[[ii]], function(x) as.matrix(Matrix::Diagonal(x=1/sd) %*% x))
     }
@@ -414,7 +411,7 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   #' \item{keep.test}{Sample to keep in the testing dataset}
   #' \item{ref.bfile}{The reference panel dataset}
   #' \item{keep.ref}{Sample to keep in the reference panel dataset}
-  #' \item{lambda, s, keep.test, destandardized}{Information to pass on to \code{\link{validate.ssCTPR.pipeline}}}
+  #' \item{lambda, s, lambda_ct, keep.test, destandardized}{Information to pass on to \code{\link{validate.ssCTPR.pipeline}}}
   #' \item{pgs}{A matrix of polygenic scores}
   #' \item{destandardized}{Are the coefficients destandardized?}
   #' \item{exclude.ambiguous}{Were ambiguous SNPs excluded?}
@@ -428,11 +425,6 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   ### Polygenic scores 
   if(trace) cat("Calculating polygenic scores ...\n")
   beta_primary <- beta
-  # if(traits>1){
-  #   for(i in 1:length(beta_primary)) {
-  #     beta_primary[[i]] <- lapply(beta_primary[[i]], function(x) x[1:(nrow(x)/traits),])
-  #   }
-  # }
   
   pgs <- list()
   for(ii in 1:length(beta_primary)){

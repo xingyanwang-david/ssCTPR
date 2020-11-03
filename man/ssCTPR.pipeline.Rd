@@ -33,9 +33,6 @@ ssCTPR.pipeline(
 )
 }
 \arguments{
-\item{cor}{A matrix of SNP-wise correlations with phenotype
-derived from summary statistics}
-
 \item{traits}{The number of traits}
 
 \item{chr}{Together with \code{pos}, chromosome and position for \code{cor}}
@@ -63,7 +60,7 @@ or (3) a data.frame of regions in \href{https://www.ensembl.org/info/website/upl
 \item{lambda_ct}{to pass on to \code{\link{ssCTPR}}}
 
 \item{destandardize}{Should coefficients from \code{\link{ssCTPR}} be 
-destandardized using test dataset standard deviations before being returned?}
+destandardized using test data standard deviations before being returned?}
 
 \item{trace}{Controls the amount of output.}
 
@@ -96,7 +93,7 @@ A \code{ssCTPR.pipeline} object with the following elements
 \item{keep.test}{Sample to keep in the testing dataset}
 \item{ref.bfile}{The reference panel dataset}
 \item{keep.ref}{Sample to keep in the reference panel dataset}
-\item{lambda, s, keep.test, destandardized}{Information to pass on to \code{\link{validate.ssCTPR.pipeline}}}
+\item{lambda, s, lambda_ct, keep.test, destandardized}{Information to pass on to \code{\link{validate.ssCTPR.pipeline}}}
 \item{pgs}{A matrix of polygenic scores}
 \item{destandardized}{Are the coefficients destandardized?}
 \item{exclude.ambiguous}{Were ambiguous SNPs excluded?}
@@ -106,7 +103,7 @@ The easy way to run ssCTPR
 }
 \details{
 To run \bold{ssCTPR} we assume as a minimum you have a vector of summary 
-statistics in terms of SNP-wise correlations (\code{cor}) and their positions (\code{chr}, 
+statistics in terms of SNP-wise correlations of primary trait, vector(s) of effect sizes of secondary traits and their positions (\code{chr}, 
 \code{pos}), one of \code{A1} or \code{A2}, and a reference panel, specified 
 either in \code{ref.bfile} or \code{test.bfile}. If only \code{test.bfile} is specified, 
 we assume \code{test.bfile} is also the \code{ref.bfile}.  

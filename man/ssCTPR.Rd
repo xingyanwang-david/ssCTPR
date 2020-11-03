@@ -26,7 +26,7 @@ ssCTPR(
 )
 }
 \arguments{
-\item{cor}{A matrix of correlations (\eqn{r})}
+\item{cor}{A matrix of SNP-wise correlation with primary trait, derived from summary statistics, and beta of secondary traits if have any}
 
 \item{bfile}{PLINK bfile (as character, without the .bed extension)}
 
@@ -77,7 +77,7 @@ A list with the following
 \item{nparams}{Number of non-zero coefficients}
 }
 \description{
-Function to obtain beta estimates of a regression problem given summary statistics
+Function to obtain beta estimates of an elastic net regression problem given summary statistics
 from one or more traits and a reference panel
 }
 \details{
@@ -97,5 +97,5 @@ SNP ids (matching those in the .bim file).
 }
 \note{
 Missing genotypes are interpreted as having the homozygous A2 alleles in the 
-PLINK files (same as the \code{--fill-missing-a2} option in PLINK).
+PLINK files (same as the --fill-missing-a2 option in PLINK).
 }

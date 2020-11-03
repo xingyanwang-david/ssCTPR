@@ -1,5 +1,5 @@
 #' @title ssCTPR
-#' @description Function to obtain beta estimates of a regression problem given summary statistics
+#' @description Function to obtain beta estimates of an elastic net regression problem given summary statistics
 #' from one or more traits and a reference panel
 #' 
 #' @details A function to find the minimum of \eqn{\beta} in  
@@ -17,9 +17,8 @@
 #' SNP ids (matching those in the .bim file). 
 #' 
 #' @note Missing genotypes are interpreted as having the homozygous A2 alleles in the 
-#' PLINK files (same as the \code{--fill-missing-a2} option in PLINK). 
-#' 
-#' @param cor A matrix of correlations (\eqn{r})
+#' PLINK files (same as the --fill-missing-a2 option in PLINK). 
+#' @param cor A matrix of SNP-wise correlation with primary trait, derived from summary statistics, and beta of secondary traits if have any
 #' @param bfile PLINK bfile (as character, without the .bed extension)
 #' @param lambda A vector of \eqn{\lambda}s (the tuning parameter)
 #' @param shrink The shrinkage parameter \eqn{s} for the correlation matrix \eqn{R} 
