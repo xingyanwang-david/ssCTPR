@@ -1,4 +1,4 @@
-ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL, 
+ssCTPR.pipeline <- function(cor, traits, adj=NULL, chr=NULL, pos=NULL, snp=NULL, 
                               A1=NULL, A2=NULL, 
                               ref.bfile=NULL, test.bfile=NULL, 
                               LDblocks=NULL, 
@@ -17,8 +17,9 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
                               ...) {
   #' @title Run ssCTPR with standard pipeline
   #' @description The easy way to run ssCTPR 
-  #' @param cor A matrix of SNP-wise correlation with primary trait, derived from \code{\link{p2cor}, and beta of secondary traits if have any
+  #' @param cor A matrix of SNP-wise correlation with primary trait, derived from \code{\link{p2cor}}, and beta of secondary traits if have any
   #' @param traits The number of traits
+  #' @param adj A matrix of adjacency coefficients. NROW is the number of variants; NCOL is the number of secondary traits.
   #' @param chr Together with \code{pos}, chromosome and position for \code{cor}
   #' @param pos Together with \code{chr}, chromosome and position for \code{cor}
   #' @param A1 Alternative allele (effect allele) for \code{cor}
@@ -127,6 +128,17 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   stopifnot(!any(is.na(cor)))
   stopifnot(all(cor[,1] > -1 & cor[,1] < 1))
 
+  if(is.null(adj) && ncol(cor)>1){
+    adj <- matrix(1,nrow = nrow(cor),ncol = ncol(cor)-1)
+  } else if(ncol(cor)==1){
+    adj <- matrix(0,nrow = nrow(cor),ncol = 1)
+  } else{
+    adj <- as.matrix(adj)
+    stopifnot(!any(is.na(adj)))
+    stopifnot(nrow(adj)==nrow(cor))
+    stopifnot(ncol(adj)==(ncol(cor)-1)) 
+  }
+  
   if(chrpos) {
     stopifnot(length(chr) == length(pos))
     stopifnot(length(chr) == nrow(cor))
@@ -204,7 +216,7 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
                               list(test.bfile, keep.test, remove.test))
                               
   ### ss ###
-  ss <- list(chr=chr, pos=pos, A1=A1, A2=A2, snp=snp, cor=cor)
+  ss <- list(chr=chr, pos=pos, A1=A1, A2=A2, snp=snp, cor=cor, adj=adj)
   ss[sapply(ss, is.null)] <- NULL
   ss <- as.data.frame(ss)
   
@@ -299,13 +311,14 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
   s.minus.1 <- s[s != 1]
   
   ### Get beta estimates from ssCTPR ###
-  cor2 <- ss2[sort(m.common$order),5:ncol(ss2)]
+  cor2 <- ss2[sort(m.common$order),5:(5+traits-1)]
+  adj2 <- ss2[sort(m.common$order),(5+traits):(5+traits+ncol(adj)-1)]
   ls <- list()
   if(length(s.minus.1) > 0) {
     if(trace) cat("Running ssCTPR ...\n")
     ls <- lapply(s.minus.1, function(s) {
       if(trace) cat("s = ", s, "\n")
-        ssCTPR(cor=cor2, bfile=ref.bfile, 
+        ssCTPR(cor=cor2, adj=adj2, bfile=ref.bfile, 
                     shrink=s, extract=ref.extract, lambda=lambda, lambda_ct=lambda_ct,
                     blocks = LDblocks, trace=trace-1, 
                     keep=parsed.ref$keep, cluster=cluster, ...)
@@ -316,14 +329,25 @@ ssCTPR.pipeline <- function(cor, traits, chr=NULL, pos=NULL, snp=NULL,
 
   ### indepssCTPR ###        s=1
   ss3 <- ss[m.test$order,]
-  ss3[,5:ncol(ss3)] <- ss3[,5:ncol(ss3)] * m.test$rev
+  ss3[,5:(5+traits-1)] <- ss3[,5:(5+traits-1)] * m.test$rev
   ss3$A1 <- test.bim$V5[m.test$ref.extract]
   ss3$A2 <- test.bim$V6[m.test$ref.extract]
   ss3$order <- m.test$order
+  print(colnames(ss3)) # need to remove
+  
+  cor3 <- ss3[,5:(5+traits-1)]
+  adj3 <- ss3[,(5+traits):(5+traits+ncol(adj)-1)]
+  if(ncol(cor3)>2){
+    adjr3 <- cor3[,-1] * adj3
+    adj3 <- apply(adj3,1,sum)
+    adjr3 <- apply(adjr3,1,sum)
+    cor3 <- cbind(cor3[,1],adjr3)    
+  }
+  
   
   if(any(s == 1)) {
     if(trace) cat("Running ssCTPR with s=1...\n")
-    il <- indepssCTPR(ss3[,5:(ncol(ss3)-1)], lambda=lambda, lambda_ct = lambda_ct, trace = trace)
+    il <- indepssCTPR(cor3, adj3, lambda=lambda, lambda_ct = lambda_ct, trace = trace)
   } else {
     il <- list(beta=matrix(0, nrow=length(m.test$order), ncol=length(lambda)))
   } ## ? 

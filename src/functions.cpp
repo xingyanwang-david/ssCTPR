@@ -396,6 +396,7 @@ arma::mat multiBed3sp(const std::string fileName, int N, int P,
 //' @param diag diag(X'X)
 //' @param X genotype Matrix
 //' @param r correlations
+//' @param adj adjacency coefficients
 //' @param thr threshold 
 //' @param x beta coef
 //' @param yhat A vector, X*x
@@ -406,18 +407,20 @@ arma::mat multiBed3sp(const std::string fileName, int N, int P,
 //' 
 // [[Rcpp::export]]
 int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& diag, const arma::mat& X, 
-          const arma::mat& r, double thr, arma::vec& x, arma::vec& yhat, int trace, int maxiter)
+          const arma::mat& r, const arma::vec& adj, double thr, arma::vec& x, arma::vec& yhat, int trace, int maxiter)
 {
   
   
   int n=X.n_rows; // number of samples
   int p=X.n_cols; // number of variants
-  int traits=r.n_cols; // number of traits, including the primary trait
+  int traits=r.n_cols; // number of traits, including the primary trait 
   
   if(r.n_rows != p) stop("r.n_rows != p");
   if(x.n_elem != p) stop("x.n_elem != p");
   if(yhat.n_elem != n) stop("yhat.n_elem != n");
   if(diag.n_elem != p) stop("diag.n_elem != p"); 
+  
+  //Rcout << "Yingxi-elnet: ABC" << std::endl;
   
   double dlx_cur, dlx_pre,del,t,xj,ctp;
   int j,i;
@@ -426,9 +429,11 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
   arma::vec Lambda2(p); 
   Lambda2.fill(lambda2);
   arma::vec Lambda_ct(p); 
-  Lambda_ct.fill((traits-1)*lambda_ct);
+  Lambda_ct=lambda_ct*adj;
   
   arma::vec denom=diag + Lambda2 + Lambda_ct; // denominator while updating beta coef
+  
+  //Rcout << "Yingxi-elnet: DEF" << std::endl;
   
   int conv=0;
   int count=0;
@@ -447,12 +452,13 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
       
       
       // cross trait penalty
-      ctp=0.0;
-      for(int tt=1;tt<traits;tt++){
-        ctp+=r(j,tt);
+      if(traits > 1){
+        ctp=r(j,1);
+        ctp*=lambda_ct;
+      } else{
+        ctp=0.0;
       }
-      ctp*=lambda_ct;
-      
+   
       // update the beta coef
       if(std::abs(t+ctp)-lambda1 > 0.0){
         if(t+ctp-lambda1 > 0.0){
@@ -498,6 +504,7 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
 //' @param diag diag(X'X)
 //' @param X genotype Matrix
 //' @param r correlations
+//' @param adj adjacency coefficients
 //' @param thr threshold 
 //' @param x beta coef
 //' @param yhat A vector, X*x
@@ -509,7 +516,7 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
 //' @keywords internal
 //'
 // [[Rcpp::export]]
-int repelnet(double lambda1, double lambda2, double lambda_ct, arma::vec& diag, arma::mat& X, arma::mat& r,
+int repelnet(double lambda1, double lambda2, double lambda_ct, arma::vec& diag, arma::mat& X, arma::mat& r, arma::vec& adj,
              double thr, arma::vec& x, arma::vec& yhat, int trace, int maxiter, 
              arma::Col<int>& startvec, arma::Col<int>& endvec)
 {
@@ -529,6 +536,7 @@ int repelnet(double lambda1, double lambda2, double lambda_ct, arma::vec& diag, 
                    diag.subvec(startvec(i), endvec(i)), 
                    X.cols(startvec(i), endvec(i)), 
                    r.rows(startvec(i), endvec(i)),
+                   adj.subvec(startvec(i), endvec(i)),
                    thr, xtouse, 
                    yhattouse, trace - 1, maxiter);
     //Rcout << "Yingxi: DEF" << std::endl;
@@ -680,6 +688,7 @@ arma::vec normalize(arma::mat &genotypes)
 //' @param lambda_ct cross trait penalty parameter
 //' @param fileName the file name of the reference panel
 //' @param r a matrix of SNP-wise correlation with primary trait and/or beta estimates of secondary traits
+//' @param adj a vector of SNP-wise adjacency coefficients between the primary and secondary traits
 //' @param N number of individuals in the reference panel
 //' @param P number of variants in reference file
 //' @param col_skip_pos which variants should we skip
@@ -697,7 +706,7 @@ arma::vec normalize(arma::mat &genotypes)
 //'  
 // [[Rcpp::export]]
 List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::string fileName,
-              arma::mat& r, int N, int P, 
+              arma::mat& r, arma::vec& adj, int N, int P, 
               arma::Col<int>& col_skip_pos, arma::Col<int>& col_skip, 
               arma::Col<int>& keepbytes, arma::Col<int>& keepoffset, 
               double thr, arma::vec& x, int trace, int maxiter, 
@@ -709,7 +718,8 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
   
   Rcout << "runElnet" << std::endl;
   int i,j;
-  int traits = r.n_cols; // number of traits, including the primary one
+  //int traits = r.n_cols; // number of traits, including the primary one
+  
   arma::mat genotypes = genotypeMatrix(fileName, N, P, col_skip_pos, col_skip, keepbytes,
                                        keepoffset, 1);
   //Rcout << "Yingxi: (a) in runElnet" << std::endl;
@@ -747,7 +757,7 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
     if (trace > 0)
       Rcout << "lambda: " << lambda(i) << "\n" << std::endl;
     out(i) =
-      repelnet(lambda(i), shrink, lambda_ct, diag,genotypes, r, thr, x, yhat, trace-1, maxiter, 
+      repelnet(lambda(i), shrink, lambda_ct, diag,genotypes, r, adj, thr, x, yhat, trace-1, maxiter, 
                startvec, endvec);
     beta.col(i) = x;
     for(j=0; j < r.n_rows; j++) {
@@ -764,9 +774,9 @@ List runElnet(arma::vec& lambda, double shrink, double lambda_ct, const std::str
       arma::as_scalar(loss(i) + 2.0 * arma::sum(arma::abs(x)) * lambda(i) +
       arma::sum(arma::pow(x, 2)) * shrink);
     
-    for(int tt=1; tt<traits; tt++){
-      fbeta(i)+=(lambda_ct*arma::sum(arma::pow(r.col(tt)-x,2)));
-    }
+    //for(int tt=1; tt<traits; tt++){
+    //  fbeta(i)+=(lambda_ct*arma::sum(arma::pow(r.col(tt)-x,2)));
+    //} need to modify??
   }
   return List::create(Named("lambda") = lambda, 
                       Named("beta") = beta,

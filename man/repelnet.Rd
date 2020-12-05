@@ -11,6 +11,7 @@ repelnet(
   diag,
   X,
   r,
+  adj,
   thr,
   x,
   yhat,
@@ -32,6 +33,8 @@ repelnet(
 \item{X}{genotype Matrix}
 
 \item{r}{correlations}
+
+\item{adj}{adjacency coefficients}
 
 \item{thr}{threshold}
 

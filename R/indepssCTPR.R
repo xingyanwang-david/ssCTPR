@@ -1,6 +1,7 @@
 #' @title Independent ssCTPR based on summary statistics (a.k.a. soft-thresholding)
 #' 
-#' @param coef vector of regression coefficients (\eqn{r})
+#' @param coef vector/matrix of regression coefficients (\eqn{r})
+#' @param adj vector of adjacency coefficients
 #' @param lambda a vector of \eqn{\lambda}s 
 #' @param lambda_ct a vector of \eqn{\lambda_{ctp}}s
 #' @param thr threshold to stop CD algorithm
@@ -11,7 +12,7 @@
 #' \deqn{f(\beta)=\beta'\beta - 2\beta'r + 2\lambda||\beta||_1 + \lambda_{ct}||\beta-\s{t}||^{2}}
 #' where \eqn{r} is the vector of regression coefficients.
 #' @export
-indepssCTPR <- function(coef, lambda=exp(seq(log(0.001), log(0.1), length.out=20)), lambda_ct, thr=1e-4,maxiter=10000, trace=1) {
+indepssCTPR <- function(coef, adj, lambda=exp(seq(log(0.001), log(0.1), length.out=20)), lambda_ct, thr=1e-4,maxiter=10000, trace=1) {
   coef <- as.matrix(coef)
   traits <- ncol(coef)
   p <- nrow(coef)
@@ -26,14 +27,9 @@ indepssCTPR <- function(coef, lambda=exp(seq(log(0.001), log(0.1), length.out=20
   } else{ # cross traits
     indeplasso_fixed_ctp <- function(lambda_ct){
       results <- matrix(0,ncol = length(lambda), p)
-      if(traits==2){
-        ctp <- coef[,2]
-      } else{
-        ctp <- apply(coef[,-1], 1, sum)
-      }
-      ctp <- lambda_ct*ctp
+      ctp <- lambda_ct*coef[,2]
       for(i in 1:length(lambda)) {
-        results[,i] <- sign(coef[,1]+ctp) * pmax((abs(coef[,1]+ctp) - lambda[i]),0)
+        results[,i] <- sign(coef[,1]+ctp) * pmax((abs(coef[,1]+ctp) - lambda[i]),0) / (1+lambda_ct*adj)
       }
       
       return(list(lambda=lambda, beta=results))

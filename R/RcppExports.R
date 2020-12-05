@@ -52,6 +52,7 @@ multiBed3sp <- function(fileName, N, P, beta, nonzeros, colpos, ncol, col_skip_p
 #' @param diag diag(X'X)
 #' @param X genotype Matrix
 #' @param r correlations
+#' @param adj adjacency coefficients
 #' @param thr threshold 
 #' @param x beta coef
 #' @param yhat A vector, X*x
@@ -60,8 +61,8 @@ multiBed3sp <- function(fileName, N, P, beta, nonzeros, colpos, ncol, col_skip_p
 #' @return conv
 #' @keywords internal
 #' 
-elnet <- function(lambda1, lambda2, lambda_ct, diag, X, r, thr, x, yhat, trace, maxiter) {
-    .Call(`_ssCTPR_elnet`, lambda1, lambda2, lambda_ct, diag, X, r, thr, x, yhat, trace, maxiter)
+elnet <- function(lambda1, lambda2, lambda_ct, diag, X, r, adj, thr, x, yhat, trace, maxiter) {
+    .Call(`_ssCTPR_elnet`, lambda1, lambda2, lambda_ct, diag, X, r, adj, thr, x, yhat, trace, maxiter)
 }
 
 #' performs elnet by blocks
@@ -72,6 +73,7 @@ elnet <- function(lambda1, lambda2, lambda_ct, diag, X, r, thr, x, yhat, trace, 
 #' @param diag diag(X'X)
 #' @param X genotype Matrix
 #' @param r correlations
+#' @param adj adjacency coefficients
 #' @param thr threshold 
 #' @param x beta coef
 #' @param yhat A vector, X*x
@@ -82,8 +84,8 @@ elnet <- function(lambda1, lambda2, lambda_ct, diag, X, r, thr, x, yhat, trace, 
 #' @return conv
 #' @keywords internal
 #'
-repelnet <- function(lambda1, lambda2, lambda_ct, diag, X, r, thr, x, yhat, trace, maxiter, startvec, endvec) {
-    .Call(`_ssCTPR_repelnet`, lambda1, lambda2, lambda_ct, diag, X, r, thr, x, yhat, trace, maxiter, startvec, endvec)
+repelnet <- function(lambda1, lambda2, lambda_ct, diag, X, r, adj, thr, x, yhat, trace, maxiter, startvec, endvec) {
+    .Call(`_ssCTPR_repelnet`, lambda1, lambda2, lambda_ct, diag, X, r, adj, thr, x, yhat, trace, maxiter, startvec, endvec)
 }
 
 #' imports genotypeMatrix
@@ -119,6 +121,7 @@ normalize <- function(genotypes) {
 #' @param lambda_ct cross trait penalty parameter
 #' @param fileName the file name of the reference panel
 #' @param r a matrix of SNP-wise correlation with primary trait and/or beta estimates of secondary traits
+#' @param adj a vector of SNP-wise adjacency coefficients between the primary and secondary traits
 #' @param N number of individuals in the reference panel
 #' @param P number of variants in reference file
 #' @param col_skip_pos which variants should we skip
@@ -134,8 +137,8 @@ normalize <- function(genotypes) {
 #' @return a list of results
 #' @keywords internal
 #'  
-runElnet <- function(lambda, shrink, lambda_ct, fileName, r, N, P, col_skip_pos, col_skip, keepbytes, keepoffset, thr, x, trace, maxiter, startvec, endvec) {
-    .Call(`_ssCTPR_runElnet`, lambda, shrink, lambda_ct, fileName, r, N, P, col_skip_pos, col_skip, keepbytes, keepoffset, thr, x, trace, maxiter, startvec, endvec)
+runElnet <- function(lambda, shrink, lambda_ct, fileName, r, adj, N, P, col_skip_pos, col_skip, keepbytes, keepoffset, thr, x, trace, maxiter, startvec, endvec) {
+    .Call(`_ssCTPR_runElnet`, lambda, shrink, lambda_ct, fileName, r, adj, N, P, col_skip_pos, col_skip, keepbytes, keepoffset, thr, x, trace, maxiter, startvec, endvec)
 }
 
 # Register entry points for exported C++ functions

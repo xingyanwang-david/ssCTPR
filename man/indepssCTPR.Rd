@@ -6,6 +6,7 @@
 \usage{
 indepssCTPR(
   coef,
+  adj,
   lambda = exp(seq(log(0.001), log(0.1), length.out = 20)),
   lambda_ct,
   thr = 1e-04,
@@ -14,7 +15,9 @@ indepssCTPR(
 )
 }
 \arguments{
-\item{coef}{vector of regression coefficients (\eqn{r})}
+\item{coef}{vector/matrix of regression coefficients (\eqn{r})}
+
+\item{adj}{vector of adjacency coefficients}
 
 \item{lambda}{a vector of \eqn{\lambda}s}
 

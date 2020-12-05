@@ -4,7 +4,20 @@
 \alias{elnet}
 \title{Performs elnet}
 \usage{
-elnet(lambda1, lambda2, lambda_ct, diag, X, r, thr, x, yhat, trace, maxiter)
+elnet(
+  lambda1,
+  lambda2,
+  lambda_ct,
+  diag,
+  X,
+  r,
+  adj,
+  thr,
+  x,
+  yhat,
+  trace,
+  maxiter
+)
 }
 \arguments{
 \item{lambda1}{lambda}
@@ -18,6 +31,8 @@ elnet(lambda1, lambda2, lambda_ct, diag, X, r, thr, x, yhat, trace, maxiter)
 \item{X}{genotype Matrix}
 
 \item{r}{correlations}
+
+\item{adj}{adjacency coefficients}
 
 \item{thr}{threshold}
 

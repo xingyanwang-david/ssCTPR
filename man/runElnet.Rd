@@ -10,6 +10,7 @@ runElnet(
   lambda_ct,
   fileName,
   r,
+  adj,
   N,
   P,
   col_skip_pos,
@@ -32,6 +33,8 @@ runElnet(
 \item{fileName}{the file name of the reference panel}
 
 \item{r}{a matrix of SNP-wise correlation with primary trait and/or beta estimates of secondary traits}
+
+\item{adj}{a vector of SNP-wise adjacency coefficients between the primary and secondary traits}
 
 \item{N}{number of individuals in the reference panel}
 

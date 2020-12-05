@@ -1,9 +1,9 @@
 Package: ssCTPR
 Type: Package
 Title: Cross-Trait Penalized Regression using Summary Statistics
-Version: 1.1
+Version: 1.2
 Date: 2020-11-02
-Author: Yingxi Yang
+Author: Yingxi Yang, Liming Liang
 Maintainer: Yingxi Yang
       <yingxi_yang@hsph.harvard.edu>
 Description: A Polygenic Risk Score (PRS) method based on elastic net regression using 

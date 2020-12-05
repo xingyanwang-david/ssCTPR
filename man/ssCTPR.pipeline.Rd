@@ -7,6 +7,7 @@
 ssCTPR.pipeline(
   cor,
   traits,
+  adj = NULL,
   chr = NULL,
   pos = NULL,
   snp = NULL,
@@ -33,7 +34,11 @@ ssCTPR.pipeline(
 )
 }
 \arguments{
+\item{cor}{A matrix of SNP-wise correlation with primary trait, derived from \code{\link{p2cor}}, and beta of secondary traits if have any}
+
 \item{traits}{The number of traits}
+
+\item{adj}{A matrix of adjacency coefficients. NROW is the number of variants; NCOL is the number of secondary traits.}
 
 \item{chr}{Together with \code{pos}, chromosome and position for \code{cor}}
 

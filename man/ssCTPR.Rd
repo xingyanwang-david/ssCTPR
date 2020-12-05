@@ -6,6 +6,7 @@
 \usage{
 ssCTPR(
   cor,
+  adj,
   bfile,
   lambda = exp(seq(log(0.001), log(0.1), length.out = 20)),
   shrink = 0.9,
@@ -27,6 +28,8 @@ ssCTPR(
 }
 \arguments{
 \item{cor}{A matrix of SNP-wise correlation with primary trait, derived from summary statistics, and beta of secondary traits if have any}
+
+\item{adj}{Adjacency coefficients}
 
 \item{bfile}{PLINK bfile (as character, without the .bed extension)}
 

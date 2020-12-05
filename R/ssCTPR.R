@@ -19,6 +19,7 @@
 #' @note Missing genotypes are interpreted as having the homozygous A2 alleles in the 
 #' PLINK files (same as the --fill-missing-a2 option in PLINK). 
 #' @param cor A matrix of SNP-wise correlation with primary trait, derived from summary statistics, and beta of secondary traits if have any
+#' @param adj Adjacency coefficients
 #' @param bfile PLINK bfile (as character, without the .bed extension)
 #' @param lambda A vector of \eqn{\lambda}s (the tuning parameter)
 #' @param shrink The shrinkage parameter \eqn{s} for the correlation matrix \eqn{R} 
@@ -40,7 +41,7 @@
 #' 
 #' @export
 
-ssCTPR <- function(cor, bfile, 
+ssCTPR <- function(cor, adj, bfile, 
                      lambda=exp(seq(log(0.001), log(0.1), length.out=20)), 
                      shrink=0.9, 
                      lambda_ct=c(0, 0.06109, 0.13920, 0.24257),
@@ -52,6 +53,8 @@ ssCTPR <- function(cor, bfile,
   cor <- as.matrix(cor)
   stopifnot(sum(apply(cor,2,mode)!="numeric")==0)
   stopifnot(!any(is.na(cor)))
+  stopifnot(sum(apply(adj,2,mode)!="numeric")==0)
+  stopifnot(!any(is.na(adj)))
   cat("maxiter: ", maxiter, "\n")
   if(any(abs(cor[,1]) > 1)) warning("Some abs(cor) > 1")
   if(any(abs(cor[,1]) == 1)) warning("Some abs(cor) == 1")
@@ -83,19 +86,19 @@ ssCTPR <- function(cor, bfile,
   if(length(unique(chunks$chunks.blocks)) > 1) {
     if(is.null(cluster)) {
       results.list <- lapply(unique(chunks$chunks.blocks), function(i) {
-        ssCTPR(cor=cor[chunks$chunks==i,], bfile=bfile, lambda=lambda, shrink=shrink, lambda_ct=lambda_ct,
+        ssCTPR(cor=cor[chunks$chunks==i,], adj=adj[chunks$chunks==i,], bfile=bfile, lambda=lambda, shrink=shrink, lambda_ct=lambda_ct,
                  thr=thr, init=init[chunks$chunks==i], trace=trace, maxiter=maxiter, 
                  blocks[chunks$chunks==i], keep=parsed$keep, extract=chunks$extracts[[i]], 
                  mem.limit=mem.limit, chunks=chunks$chunks[chunks$chunks==i])
       })
     } else {
-      Cor <- cor; Bfile <- bfile; Lambda <- lambda; Shrink=shrink; Thr <- thr; 
+      Cor <- cor; Adj <- adj; Bfile <- bfile; Lambda <- lambda; Shrink=shrink; Thr <- thr; 
       Maxiter=maxiter; Mem.limit <- mem.limit ; Trace <- trace; Init <- init; 
       Blocks <- blocks; Lambda_ct=lambda_ct
       # Make sure these are defined within the function and so copied to 
       # the child processes
       results.list <- parallel::parLapplyLB(cluster, unique(chunks$chunks.blocks), function(i) {
-        ssCTPR(cor=Cor[chunks$chunks==i,], bfile=Bfile, lambda=Lambda, lambda_ct=Lambda_ct,
+        ssCTPR(cor=Cor[chunks$chunks==i,], adj=Adj[chunks$chunks==i,], bfile=Bfile, lambda=Lambda, lambda_ct=Lambda_ct,
                  shrink=Shrink, thr=Thr, init=Init[chunks$chunks==i], 
                  trace=trace-0.5, maxiter=Maxiter, 
                  blocks=Blocks[chunks$chunks==i], 
@@ -136,12 +139,19 @@ ssCTPR <- function(cor, bfile,
   
   order <- order(lambda, decreasing = T)
 
+  if(ncol(cor)>2){
+    adjr <- cor[,-1] * adj
+    adj <- apply(adj,1,sum)
+    adjr <- apply(adjr,1,sum)
+    cor <- cbind(cor[,1],adjr)    
+  }
+
   if(length(lambda_ct) >= 1) {
     if(trace) cat("Running ssCTPR ...\n")
     results <- lapply(lambda_ct, function(ct) {
       if(trace) cat("lambda_ct = ", ct, "\n")
       runElnet(lambda[order], shrink, ct, fileName=paste0(bfile,".bed"), 
-               r=cor, N=parsed$N, P=parsed$P, 
+               r=cor, adj=adj, N=parsed$N, P=parsed$P, 
                col_skip_pos=extract2[[1]], col_skip=extract2[[2]],
                keepbytes=keepbytes, keepoffset=keepoffset, 
                thr=thr, x=init, trace=trace, maxiter=maxiter,
