@@ -53,6 +53,7 @@ ssCTPR <- function(cor, adj, bfile,
   cor <- as.matrix(cor)
   stopifnot(sum(apply(cor,2,mode)!="numeric")==0)
   stopifnot(!any(is.na(cor)))
+  adj <- as.matrix(adj)
   stopifnot(sum(apply(adj,2,mode)!="numeric")==0)
   stopifnot(!any(is.na(adj)))
   cat("maxiter: ", maxiter, "\n")
