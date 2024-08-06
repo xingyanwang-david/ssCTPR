@@ -462,9 +462,9 @@ int elnet(double lambda1, double lambda2, double lambda_ct, const arma::vec& dia
       // update the beta coef
       if(std::abs(t+ctp)-lambda1 > 0.0){
         if(t+ctp-lambda1 > 0.0){
-          x(j)=t-lambda1+ctp/denom(j);
+          x(j)= (t-lambda1+ctp)/denom(j);
         } else{
-          x(j)=t+lambda1+ctp/denom(j);
+          x(j)= (t+lambda1+ctp)/denom(j);
         }
       }
       
